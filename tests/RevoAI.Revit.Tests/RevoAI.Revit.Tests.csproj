@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>RevoAI.Revit.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RevoAI.Contracts\RevoAI.Contracts.csproj" />
+    <!--
+      The add-in assembly is not referenced because it depends on RevitAPI.dll,
+      which cannot execute outside Revit. The Revit-free folders (Engine client,
+      Configuration, Logging) are linked as source so the real code is tested
+      without duplicating it.
+    -->
+    <Compile Include="..\..\src\RevoAI.Revit\BuildInfo.cs" Link="BuildInfo.cs" />
+    <Compile Include="..\..\src\RevoAI.Revit\Engine\**\*.cs" Link="Engine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\src\RevoAI.Revit\Configuration\**\*.cs" Link="Configuration\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\src\RevoAI.Revit\Logging\**\*.cs" Link="Logging\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

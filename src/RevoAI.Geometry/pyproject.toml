@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "revoai-geometry"
+version = "0.2.0"
+description = "Revo AI BIM architectural geometry and reconstruction algorithms."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "RevoStudioz" }]
+dependencies = []
+
+[tool.setuptools]
+packages = ["revoai_geometry"]

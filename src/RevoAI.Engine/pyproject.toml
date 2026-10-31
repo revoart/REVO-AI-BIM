@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "revoai-engine"
+version = "0.2.0"
+description = "Revo AI BIM local processing engine (point clouds, AI, reconstruction)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "RevoStudioz" }]
+dependencies = ["pydantic>=2.9,<3"]
+
+[project.scripts]
+revoai-engine = "revoai_engine.service:main"
+
+[tool.setuptools]
+packages = ["revoai_engine"]

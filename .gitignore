@@ -1,0 +1,61 @@
+# Build output
+bin/
+obj/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET / Visual Studio
+.vs/
+*.DotSettings.user
+TestResults/
+coverage*.xml
+coverage*.json
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Revit / Autodesk
+*.rvt.bak
+*.rws
+*.rfa.bak
+journal*.txt
+
+# Scan data: never commit customer scans or large binaries
+samples/**/*.e57
+samples/**/*.las
+samples/**/*.laz
+samples/**/*.ply
+samples/**/*.xyz
+samples/**/*.rcp
+samples/**/*.rcs
+samples/**/*.pcd
+samples/**/*.npy
+samples/**/*.npz
+models/**/*.pt
+models/**/*.pth
+models/**/*.onnx
+
+# Local secrets / machine config
+*.local.json
+.env
+.env.*
+!.env.example
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,61 @@
+<Window x:Class="RevoAI.Revit.UI.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About Revo AI BIM"
+        Width="560" Height="500"
+        WindowStartupLocation="CenterOwner"
+        Background="#F4F6F8"
+        FontFamily="Segoe UI"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/RevoAI.Revit;component/UI/Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource CharcoalBrush}" Padding="28,26">
+            <StackPanel>
+                <TextBlock Text="REVO" Foreground="White" FontSize="26" FontWeight="Bold" />
+                <TextBlock Text="AI BIM" Foreground="{StaticResource BlueBrush}" FontSize="18" FontWeight="SemiBold" />
+                <TextBlock Text="Scan to BIM for Autodesk Revit"
+                           Foreground="#AEB7C4" FontSize="12" Margin="0,10,0,0" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="1" Margin="28,22">
+            <TextBlock Text="PRODUCT VERSION" Style="{StaticResource FieldLabel}" />
+            <TextBlock Text="{Binding Version}" Style="{StaticResource FieldValue}" />
+
+            <TextBlock Text="REVIT" Style="{StaticResource FieldLabel}" />
+            <TextBlock Text="{Binding RevitVersion}" Style="{StaticResource FieldValue}" />
+
+            <TextBlock Text="ENGINE PROTOCOL" Style="{StaticResource FieldLabel}" />
+            <TextBlock Text="{Binding ProtocolVersion}" Style="{StaticResource FieldValue}" />
+
+            <TextBlock Text="LOG FOLDER" Style="{StaticResource FieldLabel}" />
+            <TextBlock Text="{Binding LogDirectory}" Style="{StaticResource FieldValue}" TextWrapping="Wrap" />
+
+            <TextBlock Text="{Binding Copyright}" Style="{StaticResource MutedText}" Margin="0,12,0,0" />
+            <TextBlock Text="This build is a Phase 2 interface preview. Point cloud import, AI analysis and BIM generation are not implemented."
+                       Style="{StaticResource MutedText}" Margin="0,10,0,0" />
+        </StackPanel>
+
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
+                Padding="28,14">
+            <Button Content="Close" IsCancel="True" Style="{StaticResource PrimaryButton}"
+                    HorizontalAlignment="Right" />
+        </Border>
+    </Grid>
+</Window>

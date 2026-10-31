@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Revo AI BIM</Name>
+    <Assembly>RevoAI.Revit.dll</Assembly>
+    <FullClassName>RevoAI.Revit.App</FullClassName>
+    <ClientId>6bf9f9a2-2940-47bc-bd99-d14db67ecab8</ClientId>
+    <VendorId>REVOSTUDIOZ</VendorId>
+    <VendorDescription>RevoStudioz</VendorDescription>
+  </AddIn>
+</RevitAddIns>

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>RevoAI.Contracts</RootNamespace>
+    <AssemblyName>RevoAI.Contracts</AssemblyName>
+    <!--
+      net8.0 is intentional: the contracts are pure DTOs with no Revit or
+      Windows dependency, so the same assembly can be consumed by a future
+      Revit 2025 (net8.0) build and by the current Revit 2026/2027 (net10.0)
+      builds.
+    -->
+  </PropertyGroup>
+
+</Project>

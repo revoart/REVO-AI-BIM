@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RevoAI.Contracts/RevoAI.Contracts.csproj" />
+    <Project Path="src/RevoAI.Revit/RevoAI.Revit.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RevoAI.Revit.Tests/RevoAI.Revit.Tests.csproj" />
+  </Folder>
+</Solution>

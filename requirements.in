@@ -1,0 +1,9 @@
+# Runtime dependencies for the Revo AI BIM Python engine.
+# Pinned for reproducible installs. See requirements.lock.txt for the exact
+# resolved set produced on the reference development machine.
+open3d==0.20.0
+numpy>=2.0,<3
+scipy>=1.14
+laspy>=2.6
+lazrs>=0.7
+pydantic>=2.9,<3

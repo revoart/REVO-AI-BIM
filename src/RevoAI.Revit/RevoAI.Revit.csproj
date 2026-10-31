@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(RevitTargetFramework)</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>RevoAI.Revit</RootNamespace>
+    <AssemblyName>RevoAI.Revit</AssemblyName>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64</Platforms>
+    <OutputPath>bin\$(Configuration)\$(RevitVersion)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
+    <!-- RevitAPIUI references sibling Autodesk assemblies that are resolved at
+         runtime by Revit itself; MSB3277 is expected and not actionable. -->
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Icons\*.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RevoAI.Contracts\RevoAI.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Revit assemblies are provided by the installed Revit; never copy them. -->
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitApiDir)\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitApiDir)\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="ValidateRevitApi" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(RevitApiDir)\RevitAPI.dll')"
+           Text="Revit $(RevitVersion) API not found at '$(RevitApiDir)'. Install that Revit version or pass -p:RevitApiDir=&lt;path&gt;." />
+    <Error Condition="'$(RevitTargetFramework)' == ''"
+           Text="Unsupported RevitVersion '$(RevitVersion)'. Supported values: 2025, 2026, 2027." />
+  </Target>
+
+</Project>
