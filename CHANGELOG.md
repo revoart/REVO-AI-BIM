@@ -26,6 +26,8 @@ Semantic Versioning.
   2027.
 - Imported a real 27,802,731-point E57 scan into 21 chunks in 12.6 s on Revit
   2027; the workspace loaded the store with colours and intensity.
+- Ran Phase 4 segmentation on that real scan: 82,260 analysed points, 14 planar
+  instances, mean plane-fit confidence 0.761, 90.2% coverage, 1.04 s.
 - Unsupported `.rwcx` input now returns the normal typed error dialog instead of
   crashing.
 - Revit 2026 and 2027 Release builds still complete with zero warnings.

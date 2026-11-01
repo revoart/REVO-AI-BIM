@@ -64,6 +64,7 @@ point cloud store
 | Engine smoke test advertises 0.4.0 capabilities | **Passed** |
 | Import Scan opens without Revit termination (0.4.1 hotfix) | **Passed** |
 | Unsupported `.rwcx` input returns a typed error, no crash | **Passed** |
+| Real 27.8M-point E57 analysis (200k sample, 0.05 m voxel) | **Passed** |
 
 Commands used:
 
@@ -75,6 +76,28 @@ dotnet build src\RevoAI.Revit\RevoAI.Revit.csproj -c Release -p:RevitVersion=202
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\probe-ui.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-engine.ps1
 ```
+
+### Real-scan run (engine)
+
+The verified Revit 2027 import was also analysed directly through the engine with
+the default Scan Analysis settings:
+
+| Value | Result |
+| --- | --- |
+| Source points | 27,802,731 |
+| Sampled points | 198,591 |
+| Points after 0.05 m voxel | 82,260 |
+| Segments | 14 |
+| Classes | 7 ceiling, 6 floor, 1 wall |
+| Mean plane-fit confidence | 0.761 |
+| Assigned-plane coverage | 90.2% |
+| Engine time | 1.04 s |
+| Result | `<store>/analysis/segmentation.json` |
+
+This is a large multi-level/site scan spanning roughly 125 m x 130 m. Several
+horizontal levels were labelled floor or ceiling from their height, confirming
+the documented multi-storey limitation. The run proves the real engine, storage
+and confidence path; the Scan Analysis dialog still needs a manual UI check.
 
 ## 4. What is deliberately not claimed
 
