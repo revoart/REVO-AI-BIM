@@ -84,6 +84,12 @@
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
+            <Style x:Key="SidebarActionButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                <Setter Property="Padding" Value="10,7" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Margin" Value="0,2,0,0" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+            </Style>
             <Style x:Key="PlanCard" TargetType="Border" BasedOn="{StaticResource Card}">
                 <Setter Property="Padding" Value="20" />
                 <Setter Property="Margin" Value="0" />
@@ -174,6 +180,21 @@
                                TextWrapping="Wrap" Margin="0,6,0,0" />
                     <TextBlock Text="{Binding PointCount}" Foreground="#AEB7C4" FontSize="11"
                                TextWrapping="Wrap" Margin="0,6,0,0" />
+                    <Border Height="1" Background="#33FFFFFF" Margin="0,14,0,10"
+                            Visibility="{Binding HasScan, Converter={StaticResource BoolToVisibility}}" />
+                    <TextBlock Text="MODEL REFERENCE" Foreground="#8A94A6" FontSize="10"
+                               FontWeight="SemiBold" Margin="0,0,0,6"
+                               Visibility="{Binding HasScan, Converter={StaticResource BoolToVisibility}}" />
+                    <Button Content="{Binding ReferenceCloudButtonText}"
+                            Command="{Binding ToggleReferenceCloudCommand}"
+                            Style="{StaticResource SidebarActionButton}"
+                            Visibility="{Binding HasScan, Converter={StaticResource BoolToVisibility}}" />
+                    <TextBlock Text="{Binding ReferenceCloudStatus}" Foreground="#AEB7C4" FontSize="10"
+                               TextWrapping="Wrap" Margin="2,6,0,0"
+                               Visibility="{Binding HasScan, Converter={StaticResource BoolToVisibility}}" />
+                    <TextBlock Text="Sampled markers for visual reference, not native scan data."
+                               Foreground="#7C8798" FontSize="10" TextWrapping="Wrap" Margin="2,4,0,0"
+                               Visibility="{Binding HasScan, Converter={StaticResource BoolToVisibility}}" />
                 </StackPanel>
             </DockPanel>
         </Border>

@@ -125,6 +125,15 @@ source file
 - A scan store is written to a temporary folder and renamed into place, so a
   failed import does not leave a half-written store.
 
+### Model-visible reference
+
+After a successful import the add-in queries up to 4,000 evenly sampled points
+and builds a `DirectShape` named **Revo Point Cloud Reference** from small
+tetrahedral markers, converted from scan metres to Revit internal units. It is a
+visual aid only: the scan store remains the source of truth and the DirectShape
+is not native point-cloud data. The sidebar button deletes or rebuilds that
+element; the element persists with the project when saved.
+
 ## 9. Scan Analysis baseline
 
 Phase 4 intentionally ships a deterministic geometric baseline rather than
@@ -198,7 +207,7 @@ segmentation.json
 
 ## 12. Versioning
 
-- Product version follows SemVer (`0.6.0`).
+- Product version follows SemVer (`0.6.1`).
 - Assembly/file versions mirror it.
 - Protocol has an independent `MAJOR.MINOR`.
 - Each Revit version gets its own build output folder

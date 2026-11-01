@@ -5,15 +5,19 @@ This file is deliberately blunt. Anything listed here is **not working** or
 
 ## Product scope (current)
 
-1. **Import and Scan Analysis work; reconstruction commands are still shells.**
-   E57, LAS, LAZ, PLY and XYZ/TXT scans can be imported, and Scan Analysis runs
-   the geometric segmentation baseline. Generate BIM, Model Review and Quality
-   Check still show honest "not implemented" dialogs. The only model-changing
-   action is creating levels.
+1. **Reconstruction is limited to levels, floors, walls and a visual reference.**
+   E57, LAS, LAZ, PLY and XYZ/TXT scans can be imported, Scan Analysis runs the
+   geometric segmentation baseline, and Generate BIM creates native levels,
+   floors and walls marked `REVO-INFERRED`. Model Review and Quality Check still
+   show honest "not implemented" dialogs.
 2. **No RCP/RCS support.** Those formats require a verified Autodesk workflow
    and are not accepted by the importer.
-3. **No point-cloud display in Revit.** The workspace shows import and analysis
-   metadata; it does not draw points, meshes or placeholder geometry.
+3. **No native point-cloud element in Revit.** RCP/RCS is required for a real
+   `PointCloudInstance`. To keep the scan visible, Revit gets a DirectShape named
+   *Revo Point Cloud Reference* built from at most 4,000 sampled tetrahedral
+   markers. It is a visual aid, not native scan data, not measurable and not a
+   replacement for a point-cloud element. Use the sidebar button to show or hide
+   it.
 4. **No trained ML.** Scan Analysis is a deterministic geometric RANSAC
    baseline. There is no neural network, training dataset or learned model.
 5. **Limited BIM reconstruction.** Phase 5 can create native floors and walls

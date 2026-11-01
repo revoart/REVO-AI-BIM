@@ -3,6 +3,23 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.6.1] - 2026-11-01 - Point-cloud reference in the model
+
+### Added
+
+- Model-visible **Revo Point Cloud Reference**: a `DirectShape` built from up to
+  4,000 evenly sampled tetrahedral markers in scan coordinates.
+- Automatic reference creation after a successful scan import.
+- Sidebar **Show/Hide point cloud reference** button with status text.
+- Reference visibility is detected when the workspace refreshes, so the button
+  reflects an existing element after reopening a project.
+
+### Notes
+
+- The reference is sampled visual geometry, not a native Revit
+  `PointCloudInstance` and not measurable scan data. RCP/RCS remains unsupported.
+- Hiding removes the element; showing samples the local scan store again.
+
 ## [0.6.0] - 2026-11-01 - Subscription page and commercial plans
 
 ### Added

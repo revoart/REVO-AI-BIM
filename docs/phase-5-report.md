@@ -1,6 +1,6 @@
 # Phase 5 Completion Report — Native Walls and Floors
 
-**Version:** 0.6.0  
+**Version:** 0.6.1  
 **Date:** 2026-11-01  
 **Status:** Implemented and automatically verified. Import, analysis and
 generation now share one staged Workspace window. Native geometry creation in
@@ -84,15 +84,20 @@ not a wall-creation test.
 
 ## 5. Manual verification required
 
-1. Install 0.6.0 for Revit 2026 and 2027.
+1. Install 0.6.1 for Revit 2026 and 2027.
 2. On the unsigned-add-in security prompt choose **Always Load**; choosing
    "Do Not Load" hides the Revo tab.
-3. Import a scan, use the sidebar **2 Analyze scan** stage, then select **3 Generate BIM**.
-4. Click **Create preview** and confirm levels/floors/walls without any model
+3. Import a scan and confirm the **Revo Point Cloud Reference** appears in a 3D
+   view as sampled markers in scan coordinates.
+4. Use the sidebar **Show/Hide point cloud reference** button and confirm the
+   element is removed and rebuilt without errors. Save and reopen the project to
+   confirm the reference persists and the button state is detected.
+5. Use the sidebar **2 Analyze scan** stage, then select **3 Generate BIM**.
+6. Click **Create preview** and confirm levels/floors/walls without any model
    change. Optionally repeat with **PLAN SOURCE → External plan JSON** and a
    validated plan file, or **Revo AI (subscription)** when signed in.
-5. Click **Create in Revit**.
-6. Confirm native floors/walls, `REVO-INFERRED`, correct levels and no crash.
-7. Repeat for the other Revit version.
+7. Click **Create in Revit**.
+8. Confirm native floors/walls, `REVO-INFERRED`, correct levels and no crash.
+9. Repeat for the other Revit version.
 
 Manual Scan Analysis verification is also still pending.

@@ -13,9 +13,10 @@ tested and reviewed before the next begins.
 > E57 import is verified in Revit 2027; native geometry creation and the Scan
 > Analysis UI still need manual in-Revit verification.**
 >
-> This is not a trained neural network and there is no Revit point-cloud preview
-> yet. Generated floors and walls are inferred from a deterministic geometric
-> baseline, not measured accuracy.
+> This is not a trained neural network. Revit shows a sampled **point-cloud
+> reference** made of model markers, not a native RCP/RCS scan; it is a visual
+> aid, not measured point data. Generated floors and walls are inferred from a
+> deterministic geometric baseline, not measured accuracy.
 
 ## What exists today
 
@@ -38,9 +39,10 @@ tested and reviewed before the next begins.
 | Real Scan Analysis stage and workspace metrics | Done, XAML probe passed; in-Revit check pending |
 | Reconstruction plan with levels, floor polygons and wall lines | Done, tested |
 | Native Revit floor and wall creation with inferred-element marking | Implemented; manual in-Revit check pending |
+| Model-visible sampled point-cloud reference with sidebar show/hide control | Implemented; manual in-Revit check pending |
 | Unit conversion kernel (metres ↔ feet ↔ mm/in/US survey feet) | Done, tested |
 | Structured logging, configuration, error model | Done |
-| Trained ML, doors/windows, Revit point-cloud preview | **Not started** |
+| Trained ML, doors/windows, native RCP/RCS point-cloud import | **Not started** |
 
 ## Repository layout
 

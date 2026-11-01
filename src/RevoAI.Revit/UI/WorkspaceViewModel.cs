@@ -56,6 +56,8 @@ public sealed class WorkspaceViewModel : ObservableObject
     private string _statusMessage = "Workspace ready. No scan loaded.";
     private bool _isBusy;
     private WorkspaceStage _stage = WorkspaceStage.Project;
+    private bool _referenceCloudVisible;
+    private string _referenceCloudStatus = "No point-cloud reference in the model.";
     private double _progressValue;
     private int _detectedElements;
     private string _confidenceText = "—";
@@ -99,6 +101,9 @@ public sealed class WorkspaceViewModel : ObservableObject
         ShowGenerateStageCommand = new RelayCommand(ShowGenerateStage);
         ShowSubscriptionStageCommand = new RelayCommand(ShowSubscriptionStage);
         TestEngineCommand = new AsyncRelayCommand(TestEngineAsync);
+        ToggleReferenceCloudCommand = new AsyncRelayCommand(
+            ToggleReferenceCloudAsync,
+            () => HasScanStore() && !IsBusy);
         AddLevelCommand = new RelayCommand(AddLevel);
         RemoveLevelCommand = new RelayCommand(RemoveLevel, () => SelectedLevel is { IsExisting: false });
         CreateLevelsCommand = new AsyncRelayCommand(CreateLevelsAsync, () => !IsBusy && Levels.Any(level => !level.IsExisting));
@@ -165,6 +170,8 @@ public sealed class WorkspaceViewModel : ObservableObject
     };
 
     public ICommand TestEngineCommand { get; }
+
+    public ICommand ToggleReferenceCloudCommand { get; }
 
     public ICommand AddLevelCommand { get; }
 
@@ -272,11 +279,33 @@ public sealed class WorkspaceViewModel : ObservableObject
             if (SetProperty(ref _scanStorePath, value))
             {
                 OnPropertyChanged(nameof(HasScan));
+                (ToggleReferenceCloudCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
         }
     }
 
     public bool HasScan => HasScanStore();
+
+    public bool ReferenceCloudVisible
+    {
+        get => _referenceCloudVisible;
+        private set
+        {
+            if (SetProperty(ref _referenceCloudVisible, value))
+            {
+                OnPropertyChanged(nameof(ReferenceCloudButtonText));
+            }
+        }
+    }
+
+    public string ReferenceCloudButtonText =>
+        ReferenceCloudVisible ? "Hide point cloud reference" : "Show point cloud reference";
+
+    public string ReferenceCloudStatus
+    {
+        get => _referenceCloudStatus;
+        private set => SetProperty(ref _referenceCloudStatus, value);
+    }
 
     public string ScanWarnings
     {
@@ -371,6 +400,7 @@ public sealed class WorkspaceViewModel : ObservableObject
             if (SetProperty(ref _isBusy, value))
             {
                 RaiseLevelCommandStates();
+                (ToggleReferenceCloudCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
         }
     }
@@ -504,6 +534,10 @@ public sealed class WorkspaceViewModel : ObservableObject
         {
             var snapshot = await _runner.InvokeAsync(DocumentReader.Read);
             ApplySnapshot(snapshot);
+            ReferenceCloudVisible = await _runner.InvokeAsync(PointCloudReferenceBuilder.Exists);
+            ReferenceCloudStatus = ReferenceCloudVisible
+                ? "Point-cloud reference is present in the model."
+                : "No point-cloud reference in the model.";
             StatusMessage = $"Loaded '{snapshot.Title}'.";
         }
         catch (Exception ex)
@@ -629,6 +663,76 @@ public sealed class WorkspaceViewModel : ObservableObject
         }
     }
 
+    private async Task ToggleReferenceCloudAsync()
+    {
+        if (!HasScanStore())
+        {
+            StatusMessage = "Import a scan before showing its reference cloud.";
+            return;
+        }
+
+        await SetReferenceCloudVisibleAsync(!ReferenceCloudVisible);
+    }
+
+    private async Task ShowReferenceCloudAsync(bool force = false)
+    {
+        if (!HasScanStore() || IsBusy || (ReferenceCloudVisible && !force))
+        {
+            return;
+        }
+
+        await SetReferenceCloudVisibleAsync(show: true);
+    }
+
+    private async Task SetReferenceCloudVisibleAsync(bool show)
+    {
+        IsBusy = true;
+        try
+        {
+            if (!show)
+            {
+                await _runner.InvokeAsync(PointCloudReferenceBuilder.Hide);
+                ReferenceCloudVisible = false;
+                ReferenceCloudStatus = "Hidden: the model reference was removed.";
+                StatusMessage = "Point-cloud reference hidden.";
+                RevoLog.Info(ReferenceCloudStatus);
+                return;
+            }
+
+            var config = RevoConfig.Load();
+            await using var client = await PythonEngineClient.StartAsync(config);
+            var sample = await client.QueryPointCloudAsync(new PointCloudQueryParams
+            {
+                StorePath = ScanStorePath,
+                MaxPoints = 4_000,
+            });
+
+            if (sample.Positions.Count == 0)
+            {
+                throw new InvalidOperationException("The scan sample contains no points.");
+            }
+
+            var positions = sample.Positions;
+            var visible = await _runner.InvokeAsync(
+                app => PointCloudReferenceBuilder.Show(app, positions));
+
+            ReferenceCloudVisible = visible;
+            ReferenceCloudStatus =
+                $"Shown: {sample.Returned:N0} sampled marker(s) in the model.";
+            StatusMessage =
+                "Point-cloud reference shown. This is sampled reference geometry, not native point-cloud data.";
+            RevoLog.Info(ReferenceCloudStatus);
+        }
+        catch (Exception ex)
+        {
+            AddError("Could not update the point-cloud reference.", ex);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     private async Task TestEngineAsync()
     {
         IsBusy = true;
@@ -708,6 +812,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         ScanStorePath = result.StorePath;
         Analysis.StorePath = result.StorePath;
         Generate.StorePath = result.StorePath;
+        _ = ShowReferenceCloudAsync(force: true);
         ScanWarnings = result.Warnings.Count == 0
             ? "No import warnings."
             : string.Join(Environment.NewLine, result.Warnings.Select(warning => "• " + warning));

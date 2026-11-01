@@ -106,6 +106,19 @@ report contains test evidence.
 - [ ] Manual floor/wall creation test in Revit 2027
 - [ ] Phase reviewed and approved
 
+## Phase 5.1 - Point-cloud model reference
+
+- [x] Reference builder creates a named `DirectShape` from sampled tetrahedral markers
+- [x] Reference uses scan metres converted to Revit internal units
+- [x] Reference marked as sampled visual geometry, not reconstruction
+- [x] Auto-show after import
+- [x] Sidebar show/hide button and status
+- [x] Visibility state restored on workspace refresh
+- [x] Revit 2026 and 2027 Release builds with zero warnings
+- [x] WPF probe constructs the Workspace
+- [ ] Manual reference-cloud test in Revit 2026
+- [ ] Manual reference-cloud test in Revit 2027
+
 ## Phases 6–10
 
 Not started. See `ROADMAP.md`.
