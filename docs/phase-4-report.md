@@ -2,8 +2,9 @@
 
 **Version:** 0.4.1  
 **Date:** 2026-11-01  
-**Status:** Implemented and automatically verified. Import Scan crash fixed.
-Manual in-Revit verification pending.
+**Status:** Implemented and automatically verified. Import Scan crash fixed and
+verified in Revit 2027 with a real E57 scan; Scan Analysis manual verification is
+still pending.
 
 ## 1. Scope delivered
 
@@ -93,10 +94,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-engine.ps1
 ## 5. Manual verification still required
 
 0.4.1 is built and installed for Revit 2026 and 2027. The installed assemblies
-match the Release outputs and report version `0.4.1.0`. No Revit process was
-running at install time.
+match the Release outputs and report version `0.4.1.0`.
 
-1. Start Revit 2026/2027 with 0.4.0 installed.
+The Revit 2027 import path is verified with a real 27,802,731-point E57 scan
+(21 chunks, colours and intensity). The remaining check is **Scan Analysis**:
+
+1. Start Revit 2026/2027 with 0.4.1 installed.
 2. Import a scan, then open **Scan Analysis**.
 3. Run the defaults and confirm floor/ceiling/wall instances appear with
    confidence.
@@ -105,4 +108,4 @@ running at install time.
 6. Confirm no Revit geometry was created.
 7. Repeat for the other Revit version.
 
-Manual verification of Phases 2–3 is also still pending.
+Revit 2027 ribbon/workspace/import is verified. Revit 2026 and Scan Analysis manual checks remain pending.

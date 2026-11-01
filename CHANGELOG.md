@@ -24,6 +24,8 @@ Semantic Versioning.
 
 - Import Scan opens the workspace and import dialog without terminating Revit
   2027.
+- Imported a real 27,802,731-point E57 scan into 21 chunks in 12.6 s on Revit
+  2027; the workspace loaded the store with colours and intensity.
 - Unsupported `.rwcx` input now returns the normal typed error dialog instead of
   crashing.
 - Revit 2026 and 2027 Release builds still complete with zero warnings.

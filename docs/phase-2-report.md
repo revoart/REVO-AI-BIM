@@ -3,8 +3,9 @@
 **Project:** Revo AI BIM
 **Phase:** 2 — Revit plugin interface
 **Date:** 2026-10-31
-**Status:** Implemented; builds and automated checks pass. Manual in-Revit
-verification of the ribbon/workspace is pending.
+**Status:** Implemented; builds and automated checks pass. Ribbon, workspace and
+engine test verified in Revit 2027. Level creation and Revit 2026 manual checks
+are pending.
 
 ---
 
@@ -77,9 +78,10 @@ verify Revit API behaviour.
 | Criterion | Result |
 | --- | --- |
 | Revit loads the plugin | Phase 1 load confirmed; Phase 2 build not yet launched |
-| REVO AI BIM ribbon appears | Pending manual check |
-| All interface controls open correctly | Pending manual check |
-| Plugin does not crash Revit | Pending manual check |
+| REVO AI BIM ribbon appears | **Pass** (Revit 2027) |
+| Workspace and engine test open correctly | **Pass** (Revit 2027) |
+| All interface controls, including level creation | Pending manual check |
+| Plugin does not crash Revit | **Pass** after 0.4.1 hotfix (Revit 2027) |
 | No unsupported cross-thread Revit API operations | **Pass by design** — all calls go through `ExternalEvent` |
 | Installation instructions documented | **Pass** (README, DEVELOPMENT) |
 
@@ -103,8 +105,10 @@ verify Revit API behaviour.
 
 ## 5. Known gaps
 
-- Ribbon/workspace not yet observed inside Revit (manual gate).
-- No scan import, AI, or reconstruction.
+- Level creation has not yet been exercised inside Revit.
+- Revit 2026 manual verification is still pending.
+- Scan import and geometric analysis arrived in Phases 3-4; BIM reconstruction
+  is still later work.
 - `Test connection` requires `%APPDATA%\RevoAI\config.json`; the install script
   writes it on first install.
 - No installer, signing, licensing or CI (Phases 9–10).

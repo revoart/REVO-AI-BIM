@@ -2,7 +2,8 @@
 
 **Version:** 0.3.0  
 **Date:** 2026-11-01  
-**Status:** Implemented and automatically verified. Manual in-Revit verification pending.
+**Status:** Implemented and automatically verified. Real E57 import verified in
+Revit 2027; Revit 2026 manual verification pending.
 
 ## 1. Scope delivered
 
@@ -128,18 +129,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\probe-ui.ps1
 - **No point-cloud display in Revit.** The workspace shows import metadata only.
 - **No accuracy claim.** Nothing has been reconstructed or measured yet.
 
-## 5. Manual verification still required
+## 5. Manual verification
 
-0.3.0 has been built and installed for Revit 2026 and 2027. No Revit process was
-running at install time, so the next Revit launch will load this build.
+**Revit 2027: passed.** The product owner opened the ribbon, Workspace and Import
+Scan dialog and imported a real E57 scan:
 
-1. Start Revit so the new add-in loads.
-2. Confirm the log appears at `%LOCALAPPDATA%\RevoAI\logs\revoai-YYYYMMDD.log`.
-3. Open **REVO AI BIM → Import Scan**.
-4. Import a small E57/LAS/PLY/XYZ file.
-5. Confirm the workspace shows format, unit source, stored point count, chunk
-   count, bounds and local store path.
-6. Reopen the workspace and confirm the engine test still succeeds.
-7. Report any error dialog or unexpected value.
+- source: `gargage.e57`
+- format/unit: E57, metres (`unitSource = format`)
+- points: **27,802,731** stored
+- chunks: **21**
+- attributes: colours and intensity
+- import time: **12.6 s**
+- result: workspace loaded the scan store without a Revit error
 
-Manual verification of the Phase 2 ribbon/workspace is also still pending.
+The engine connection test also reported `0.4.1` add-in / `0.4.0` engine with
+point-cloud and segmentation capabilities.
+
+**Revit 2026 still needs the same manual check.** Open the ribbon, run the engine
+test, import an E57/LAS/LAZ/PLY/XYZ scan and confirm the workspace summary. Report
+any error dialog or unexpected value.

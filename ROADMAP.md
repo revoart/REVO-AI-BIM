@@ -6,8 +6,8 @@ phase starts. No phase is marked complete without test evidence.
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1 | Project foundation: repo, builds, environment, IPC contract, logging, config, tests | **Complete (verified)** |
-| 2 | Revit ribbon + WPF workspace + `ExternalEvent` plumbing | **Implemented — manual in-Revit check pending** |
-| 3 | Point cloud engine: E57/XYZ/PLY/LAS/LAZ, preprocessing, chunking, indexing | **Implemented — manual in-Revit check pending** |
+| 2 | Revit ribbon + WPF workspace + `ExternalEvent` plumbing | **Implemented - Revit 2027 workspace verified; level creation/2026 pending** |
+| 3 | Point cloud engine: E57/XYZ/PLY/LAS/LAZ, preprocessing, chunking, indexing | **Implemented - Revit 2027 real E57 import verified; 2026 pending** |
 | 4 | AI building intelligence: semantic/instance segmentation, confidence | **Implemented - manual in-Revit check pending** |
 | 5 | Native walls and floors: first commercial milestone | Not started |
 | 6 | Doors and windows: openings, hosted families | Not started |

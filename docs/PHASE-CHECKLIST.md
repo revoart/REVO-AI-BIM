@@ -38,7 +38,7 @@ report contains test evidence.
 - [x] Honest not-available dialogs for later phases
 - [x] Windows and icons construct outside Revit (`probe-ui.ps1`)
 - [ ] Manual ribbon/workspace test in Revit 2026
-- [ ] Manual ribbon/workspace test in Revit 2027
+- [x] Manual ribbon/workspace test in Revit 2027 (ribbon, Workspace, engine test)
 - [ ] Phase reviewed and approved
 
 ## Phase 3 — Point cloud engine
@@ -61,7 +61,7 @@ report contains test evidence.
 - [x] Revit 2026 and 2027 Release builds with zero warnings
 - [x] WPF probe constructs workspace, import, settings and about windows
 - [ ] Manual import test in Revit 2026
-- [ ] Manual import test in Revit 2027
+- [x] Manual import test in Revit 2027 (real E57, 27,802,731 points, 21 chunks)
 - [ ] Phase reviewed and approved
 
 ## Phase 4 — Scan Analysis baseline

@@ -10,7 +10,9 @@ tested and reviewed before the next begins.
 > and XYZ/TXT scans can be imported, and a geometric semantic/instance
 > segmentation baseline detects floors, ceilings and walls with plane-fit
 > confidence. The ribbon, workspace, import and analysis dialogs build and pass
-> automated checks. Manual in-Revit verification of Phases 2-4 is pending.**
+> automated checks. Revit 2027 ribbon, workspace, engine test and a real
+> 27.8-million-point E57 import are verified. Scan Analysis and Revit 2026 manual
+> checks are still pending.**
 >
 > This is not a trained neural network and there is no BIM reconstruction or
 > Revit point-cloud preview yet. Nothing in this repository claims otherwise.
