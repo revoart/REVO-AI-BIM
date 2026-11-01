@@ -23,7 +23,6 @@ public sealed class ReconstructionViewModel : ObservableObject
     private string _maxElementsText = "200";
     private string _selectedProvider = "Geometric baseline";
     private string _externalPlanPath = string.Empty;
-    private string _astraModelText = "gpt-6-astra";
     private bool _markInferred;
     private string _statusMessage = "Create a plan to preview native floors and walls before building them.";
     private string _errorMessage = string.Empty;
@@ -47,8 +46,7 @@ public sealed class ReconstructionViewModel : ObservableObject
         [
             "Geometric baseline",
             "External plan JSON",
-            "GPT-6 Astra (subscription)",
-            "GPT-6 Astra (API key)",
+            "Revo AI (subscription)",
         ];
 
         PreviewCommand = new AsyncRelayCommand(PreviewAsync, CanPreview);
@@ -117,7 +115,6 @@ public sealed class ReconstructionViewModel : ObservableObject
             if (SetProperty(ref _selectedProvider, value))
             {
                 OnPropertyChanged(nameof(IsExternalPlanProvider));
-                OnPropertyChanged(nameof(IsAstraByokProvider));
                 OnPropertyChanged(nameof(IsAstraSubscriptionProvider));
             }
         }
@@ -125,21 +122,13 @@ public sealed class ReconstructionViewModel : ObservableObject
 
     public bool IsExternalPlanProvider => SelectedProvider == "External plan JSON";
 
-    public bool IsAstraByokProvider => SelectedProvider == "GPT-6 Astra (API key)";
-
     public bool IsAstraSubscriptionProvider =>
-        SelectedProvider == "GPT-6 Astra (subscription)";
+        SelectedProvider == "Revo AI (subscription)";
 
     public string ExternalPlanPath
     {
         get => _externalPlanPath;
         set => SetProperty(ref _externalPlanPath, value);
-    }
-
-    public string AstraModelText
-    {
-        get => _astraModelText;
-        set => SetProperty(ref _astraModelText, value);
     }
 
     public bool MarkInferred
@@ -243,12 +232,6 @@ public sealed class ReconstructionViewModel : ObservableObject
             return;
         }
 
-        if (IsAstraByokProvider && string.IsNullOrWhiteSpace(AstraModelText))
-        {
-            ErrorMessage = "Enter the GPT-6 Astra model id.";
-            return;
-        }
-
         if (!TryParseDouble(ConfidenceThresholdText, out var confidence) ||
             !double.IsFinite(confidence) || confidence is < 0 or > 1)
         {
@@ -296,7 +279,6 @@ public sealed class ReconstructionViewModel : ObservableObject
                 StorePath = StorePath,
                 Provider = MapProvider(SelectedProvider),
                 ExternalPlanPath = IsExternalPlanProvider ? ExternalPlanPath : null,
-                AstraModel = AstraModelText.Trim(),
                 ConfidenceThreshold = confidence,
                 FallbackWallHeightMeters = wallHeight,
                 LevelToleranceMeters = tolerance,
@@ -457,8 +439,7 @@ public sealed class ReconstructionViewModel : ObservableObject
     private static string MapProvider(string label) => label switch
     {
         "External plan JSON" => "external",
-        "GPT-6 Astra (subscription)" => "astra_subscription",
-        "GPT-6 Astra (API key)" => "astra",
+        "Revo AI (subscription)" => "astra_subscription",
         _ => "geometric",
     };
 

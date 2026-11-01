@@ -18,6 +18,7 @@ public enum WorkspaceStage
     Import,
     Analyze,
     Generate,
+    Subscription,
 }
 
 public sealed class WorkspaceViewModel : ObservableObject
@@ -79,6 +80,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         ];
 
         Import = new ImportScanViewModel();
+        Subscription = new SubscriptionViewModel();
         Analysis = new ScanAnalysisViewModel(string.Empty, _confidenceThreshold);
         Generate = new ReconstructionViewModel(
             _runner,
@@ -95,6 +97,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         ShowImportStageCommand = new RelayCommand(ShowImportStage);
         ShowAnalysisStageCommand = new RelayCommand(ShowAnalysisStage);
         ShowGenerateStageCommand = new RelayCommand(ShowGenerateStage);
+        ShowSubscriptionStageCommand = new RelayCommand(ShowSubscriptionStage);
         TestEngineCommand = new AsyncRelayCommand(TestEngineAsync);
         AddLevelCommand = new RelayCommand(AddLevel);
         RemoveLevelCommand = new RelayCommand(RemoveLevel, () => SelectedLevel is { IsExisting: false });
@@ -117,6 +120,8 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public ReconstructionViewModel Generate { get; }
 
+    public SubscriptionViewModel Subscription { get; }
+
     public ICommand RefreshCommand { get; }
 
     public ICommand ImportScanCommand { get; }
@@ -129,6 +134,8 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public ICommand ShowGenerateStageCommand { get; }
 
+    public ICommand ShowSubscriptionStageCommand { get; }
+
     public bool IsProjectStage => _stage == WorkspaceStage.Project;
 
     public bool IsImportStage => _stage == WorkspaceStage.Import;
@@ -137,11 +144,14 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public bool IsGenerateStage => _stage == WorkspaceStage.Generate;
 
+    public bool IsSubscriptionStage => _stage == WorkspaceStage.Subscription;
+
     public string StageTitle => _stage switch
     {
         WorkspaceStage.Import => "Import scan",
         WorkspaceStage.Analyze => "Analyze scan",
         WorkspaceStage.Generate => "Generate BIM",
+        WorkspaceStage.Subscription => "Subscription",
         _ => "Project setup",
     };
 
@@ -150,6 +160,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         WorkspaceStage.Import => "Bring a supported scan into a local chunked store.",
         WorkspaceStage.Analyze => "Detect planar floors, ceilings and walls with confidence.",
         WorkspaceStage.Generate => "Preview the plan, then create native Revit floors and walls.",
+        WorkspaceStage.Subscription => "Choose the Revo AI BIM plan that fits your work.",
         _ => "Inspect the project, levels, engine and workspace settings.",
     };
 
@@ -445,6 +456,8 @@ public sealed class WorkspaceViewModel : ObservableObject
         }
     }
 
+    public void ShowSubscriptionStage() => SetStage(WorkspaceStage.Subscription);
+
     private void SetStage(WorkspaceStage stage)
     {
         if (_stage == stage)
@@ -457,6 +470,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         OnPropertyChanged(nameof(IsImportStage));
         OnPropertyChanged(nameof(IsAnalyzeStage));
         OnPropertyChanged(nameof(IsGenerateStage));
+        OnPropertyChanged(nameof(IsSubscriptionStage));
         OnPropertyChanged(nameof(StageTitle));
         OnPropertyChanged(nameof(StageSubtitle));
     }

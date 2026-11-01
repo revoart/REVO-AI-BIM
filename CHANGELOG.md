@@ -3,6 +3,36 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.6.0] - 2026-11-01 - Subscription page and commercial plans
+
+### Added
+
+- Single-window **Subscription** stage.
+- Monthly/yearly billing switch with **10% yearly discount**.
+- Plans:
+  - Personal — $35/month, $378/year, 1 seat.
+  - Commercial — $80/month, $864/year, up to 3 seats.
+  - Enterprise — $250/month, $2,700/year, organization-wide.
+- Recommended Commercial card, yearly monthly-equivalent and clear billing note.
+- Revo-managed subscription gateway client (`astra_subscription`) with
+  `SUBSCRIPTION_REQUIRED` and `SUBSCRIPTION_QUOTA_EXCEEDED`.
+- Subscription architecture and pricing documentation.
+
+### Changed
+
+- Removed the model-type selector from Generate BIM; model choice is a backend
+  concern.
+- Generate BIM plan sources are now **Geometric baseline**, **External plan
+  JSON** and **Revo AI (subscription)**.
+- The subscription page is explicit that checkout is not connected yet and that
+  selecting a plan does not charge the customer.
+
+### Verified
+
+- 65 Python tests and 32 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the single Workspace, Settings and About windows.
+
 ## [0.5.1] - 2026-11-01 - Single-window staged workflow
 
 ### Changed

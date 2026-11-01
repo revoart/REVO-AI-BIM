@@ -4,6 +4,18 @@ This is the commercial path: the customer pays Revo, not OpenAI. Revo holds the
 OpenAI key and meters usage through a backend gateway. The Revit add-in and the
 local Python engine never see the OpenAI key.
 
+## Plans
+
+| Plan | Monthly | Yearly (10% off) | Seats |
+| --- | ---: | ---: | --- |
+| Personal | $35 | $378 | 1 |
+| Commercial | $80 | $864 | Up to 3 |
+| Enterprise | $250 | $2,700 | Organization-wide |
+
+The Subscription page in the workspace shows these plans, a monthly/yearly
+toggle and the yearly monthly-equivalent. Checkout is deliberately not connected
+yet; selecting a plan does not charge the customer.
+
 ## Client side in this repository
 
 Implemented:

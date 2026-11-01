@@ -124,9 +124,10 @@ until the user clicks **Create in Revit**.
 
 The Generate BIM stage can also validate and consume a JSON plan produced by an
 external AI tool such as Claude or GPT-6 Astra. GPT-6 Astra can be called
-through a Revo-managed subscription gateway (recommended), or directly from the
-local engine with an advanced BYO `OPENAI_API_KEY`. Claude currently uses the
-file contract. See [docs/external-bim-plan.md](docs/external-bim-plan.md) and
+through a Revo-managed subscription gateway (recommended). Claude currently uses
+the file contract. The Workspace has a **Subscription** page with Personal,
+Commercial and Enterprise pricing and a yearly 10% discount. See
+[docs/external-bim-plan.md](docs/external-bim-plan.md) and
 [docs/subscription-architecture.md](docs/subscription-architecture.md).
 
 ## Documentation

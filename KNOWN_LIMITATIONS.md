@@ -106,6 +106,9 @@ This file is deliberately blunt. Anything listed here is **not working** or
     from `OPENAI_API_KEY`; it is not stored by Revo.
 24. **The Astra provider has mocked tests, not a live API test.** A real call
     requires an account, key and network access; its cost is billed by OpenAI.
+25. **Subscription checkout is not connected.** The Subscription page displays
+    pricing and lets the user select a plan, but no payment, entitlement or
+    quota service exists yet; selecting a plan does not charge the customer.
 
 ## Honesty rules for future phases
 
