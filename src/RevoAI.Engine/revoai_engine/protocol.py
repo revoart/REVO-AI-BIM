@@ -22,6 +22,8 @@ METHOD_SHUTDOWN = "shutdown"
 METHOD_POINTCLOUD_IMPORT = "pointcloud.import"
 METHOD_POINTCLOUD_INFO = "pointcloud.info"
 METHOD_POINTCLOUD_QUERY = "pointcloud.query"
+METHOD_SEGMENTATION_RUN = "segmentation.run"
+METHOD_SEGMENTATION_INFO = "segmentation.info"
 
 CAPABILITIES = (
     METHOD_INITIALIZE,
@@ -30,6 +32,8 @@ CAPABILITIES = (
     METHOD_POINTCLOUD_IMPORT,
     METHOD_POINTCLOUD_INFO,
     METHOD_POINTCLOUD_QUERY,
+    METHOD_SEGMENTATION_RUN,
+    METHOD_SEGMENTATION_INFO,
 )
 
 
@@ -53,6 +57,7 @@ class ErrorCode(IntEnum):
     PROCESSING_FAILED = -32023
     STORE_NOT_FOUND = -32024
     INVALID_UNIT = -32025
+    ANALYSIS_NOT_FOUND = -32026
 
 
 class RpcError(BaseModel):
@@ -313,6 +318,128 @@ class PointCloudQueryResult(CamelModel):
     truncated: bool
     colors: list[list[int]] | None = None
     intensity: list[float] | None = None
+
+
+class SegmentationRunParams(CamelModel):
+    store_path: str = Field(min_length=1)
+    voxel_size_meters: float = 0.05
+    max_points: int = 200_000
+    plane_distance_meters: float = 0.03
+    min_plane_points: int = 300
+    max_planes: int = 40
+    confidence_threshold: float = 0.75
+
+    @field_validator("voxel_size_meters")
+    @classmethod
+    def _validate_voxel_size(cls, value: float) -> float:
+        if not 0.0 <= value <= 1.0:
+            raise ValueError("voxelSizeMeters must be between 0 and 1 metre.")
+        return value
+
+    @field_validator("max_points")
+    @classmethod
+    def _validate_max_points(cls, value: int) -> int:
+        if not 1_000 <= value <= 1_000_000:
+            raise ValueError("maxPoints must be between 1000 and 1000000.")
+        return value
+
+    @field_validator("plane_distance_meters")
+    @classmethod
+    def _validate_plane_distance(cls, value: float) -> float:
+        if not 0.001 <= value <= 0.5:
+            raise ValueError("planeDistanceMeters must be between 0.001 and 0.5 m.")
+        return value
+
+    @field_validator("min_plane_points")
+    @classmethod
+    def _validate_min_plane_points(cls, value: int) -> int:
+        if not 10 <= value <= 100_000:
+            raise ValueError("minPlanePoints must be between 10 and 100000.")
+        return value
+
+    @field_validator("max_planes")
+    @classmethod
+    def _validate_max_planes(cls, value: int) -> int:
+        if not 1 <= value <= 200:
+            raise ValueError("maxPlanes must be between 1 and 200.")
+        return value
+
+    @field_validator("confidence_threshold")
+    @classmethod
+    def _validate_confidence_threshold(cls, value: float) -> float:
+        if not 0.0 <= value <= 1.0:
+            raise ValueError("confidenceThreshold must be between 0 and 1.")
+        return value
+
+
+class SegmentationInfoParams(CamelModel):
+    store_path: str = Field(min_length=1)
+
+
+class PlaneModel(CamelModel):
+    normal: list[float]
+    offset: float
+
+    @field_validator("normal")
+    @classmethod
+    def _normal_is_three(cls, value: list[float]) -> list[float]:
+        if len(value) != 3:
+            raise ValueError("Plane normal must contain exactly three components.")
+        return value
+
+
+class SegmentationSignals(CamelModel):
+    planarity: float
+    density_per_square_meter: float
+    coverage: float
+    size: float
+    fit_error_meters: float
+    inlier_ratio: float
+
+
+class SegmentationElement(CamelModel):
+    id: str
+    kind: str
+    point_count: int
+    confidence: float
+    area_m2: float
+    centroid: list[float]
+    bounds: Bounds3
+    plane: PlaneModel
+    signals: SegmentationSignals
+
+    @field_validator("centroid")
+    @classmethod
+    def _centroid_is_three(cls, value: list[float]) -> list[float]:
+        if len(value) != 3:
+            raise ValueError("Centroid must contain exactly three components.")
+        return value
+
+
+class SegmentationSummary(CamelModel):
+    source_points: int
+    analyzed_points: int
+    segments: int
+    by_kind: dict[str, int]
+    mean_confidence: float
+    high_confidence_segments: int
+    assigned_points: int
+    coverage: float
+
+
+class SegmentationResult(CamelModel):
+    scan_id: str
+    store_path: str
+    method: str
+    method_note: str
+    parameters: dict[str, Any]
+    summary: SegmentationSummary
+    elements: list[SegmentationElement]
+    warnings: list[str]
+    result_path: str
+    created_at: str
+    engine_version: str
+    elapsed_ms: float
 
 
 def is_compatible(version: str | None) -> bool:

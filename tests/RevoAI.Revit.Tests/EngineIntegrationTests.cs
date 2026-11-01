@@ -175,6 +175,127 @@ public sealed class EngineIntegrationTests
     }
 
     [Fact]
+    public async Task SegmentationRunAndInfoWorkEndToEnd()
+    {
+        var repoRoot = TestPaths.FindRepositoryRoot();
+        var venvPython = Path.Combine(repoRoot, ".venv", "Scripts", "python.exe");
+
+        if (!File.Exists(venvPython))
+        {
+            _output.WriteLine($"SKIPPED: Python environment not found at {venvPython}.");
+            return;
+        }
+
+        RevoLog.Initialize(Path.Combine(Path.GetTempPath(), "revoai-tests", "logs"));
+
+        var work = Path.Combine(Path.GetTempPath(), "revoai-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(work);
+        var source = Path.Combine(work, "room.xyz");
+        await File.WriteAllLinesAsync(source, SyntheticRoomLines());
+
+        var config = new RevoConfig
+        {
+            EngineRoot = repoRoot,
+            StartupTimeoutSeconds = 60,
+            RequestTimeoutSeconds = 60,
+        };
+
+        try
+        {
+            await using var client = await PythonEngineClient.StartAsync(config);
+            Assert.Contains(EngineMethods.SegmentationRun, client.Handshake!.Capabilities);
+            Assert.Contains(EngineMethods.SegmentationInfo, client.Handshake.Capabilities);
+
+            var imported = await client.ImportPointCloudAsync(new PointCloudImportParams
+            {
+                Path = source,
+                Unit = "meters",
+                OutputDirectory = Path.Combine(work, "store"),
+                ScanId = "csharp-room",
+                ChunkSizeMeters = 5.0,
+            });
+
+            var missingAnalysis = await Assert.ThrowsAsync<RevoAIEngineException>(async () =>
+                await client.GetSegmentationInfoAsync(imported.StorePath));
+            Assert.Equal(EngineErrorCodes.AnalysisNotFound, missingAnalysis.Code);
+
+            var analysis = await client.RunSegmentationAsync(new SegmentationRunParams
+            {
+                StorePath = imported.StorePath,
+                VoxelSizeMeters = 0,
+                MaxPoints = 10_000,
+                PlaneDistanceMeters = 0.01,
+                MinPlanePoints = 100,
+                MaxPlanes = 20,
+            });
+
+            Assert.Equal("csharp-room", analysis.ScanId);
+            Assert.Equal("geometric-plane-baseline/1", analysis.Method);
+            Assert.True(analysis.Summary.Segments >= 6);
+            Assert.True(analysis.Summary.ByKind["floor"] >= 1);
+            Assert.True(analysis.Summary.ByKind["ceiling"] >= 1);
+            Assert.True(analysis.Summary.ByKind["wall"] >= 4);
+            Assert.True(analysis.Summary.MeanConfidence > 0.8);
+            Assert.True(File.Exists(analysis.ResultPath));
+
+            var info = await client.GetSegmentationInfoAsync(imported.StorePath);
+            Assert.Equal(analysis.Summary.Segments, info.Summary.Segments);
+            Assert.Equal(analysis.ResultPath, info.ResultPath);
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(work, recursive: true);
+            }
+            catch (IOException)
+            {
+                // A failed test should not be masked by temp cleanup.
+            }
+        }
+    }
+
+    private static IEnumerable<string> SyntheticRoomLines()
+    {
+        const int xCount = 20;
+        const int yCount = 15;
+        const int zCount = 15;
+
+        for (var ix = 0; ix < xCount; ix++)
+        {
+            var x = 0.1 + 3.8 * ix / (xCount - 1);
+            for (var iy = 0; iy < yCount; iy++)
+            {
+                var y = 0.1 + 2.8 * iy / (yCount - 1);
+                yield return FormattableString.Invariant($"{x:0.######} {y:0.######} 0");
+                yield return FormattableString.Invariant($"{x:0.######} {y:0.######} 2.7");
+            }
+        }
+
+        for (var iy = 0; iy < yCount; iy++)
+        {
+            var y = 0.1 + 2.8 * iy / (yCount - 1);
+            for (var iz = 0; iz < zCount; iz++)
+            {
+                var z = 0.05 + 2.6 * iz / (zCount - 1);
+                yield return FormattableString.Invariant($"0 {y:0.######} {z:0.######}");
+                yield return FormattableString.Invariant($"4 {y:0.######} {z:0.######}");
+            }
+        }
+
+        for (var ix = 0; ix < xCount; ix++)
+        {
+            var x = 0.1 + 3.8 * ix / (xCount - 1);
+            for (var iz = 0; iz < zCount; iz++)
+            {
+                var z = 0.05 + 2.6 * iz / (zCount - 1);
+                yield return FormattableString.Invariant($"{x:0.######} 0 {z:0.######}");
+                yield return FormattableString.Invariant($"{x:0.######} 3 {z:0.######}");
+            }
+        }
+    }
+
+    [Fact]
     public async Task UnknownMethodReturnsTypedProtocolError()
     {
         var repoRoot = TestPaths.FindRepositoryRoot();

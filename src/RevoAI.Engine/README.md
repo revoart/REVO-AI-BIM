@@ -2,7 +2,7 @@
 
 Local Python processing engine for Revo AI BIM.
 
-Phase 3 implements the point cloud engine:
+Phases 3-4 implement the point cloud engine and Scan Analysis baseline:
 
 - `revoai_engine.service` - newline-delimited JSON-RPC 2.0 over stdin/stdout
 - `initialize`, `ping`, `shutdown`
@@ -12,7 +12,10 @@ Phase 3 implements the point cloud engine:
 - optional statistical outlier removal and voxel downsampling
 - chunked NPZ stores with a 3D grid index
 - bounds, radius, nearest and sample queries
+- `segmentation.run`, `segmentation.info`
+- geometric floor/ceiling/wall plane segmentation with plane-fit confidence
 - structured stderr/file logging
 
-AI segmentation and geometry reconstruction are added in Phases 4-5. No
-capability is reported unless it is implemented.
+The Phase 4 method is a deterministic geometric baseline, not a trained neural
+network. BIM geometry reconstruction is added in Phase 5. No capability is
+reported unless it is implemented.

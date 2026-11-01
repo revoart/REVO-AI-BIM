@@ -145,6 +145,30 @@ public sealed class PythonEngineClient : IAsyncDisposable
             timeout ?? _requestTimeout,
             cancellationToken);
 
+    /// <summary>
+    /// Runs the geometric segmentation baseline. Analysis can take minutes on
+    /// large scans, so it uses the same long timeout as import.
+    /// </summary>
+    public Task<SegmentationResult> RunSegmentationAsync(
+        SegmentationRunParams parameters,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<SegmentationResult>(
+            EngineMethods.SegmentationRun,
+            parameters,
+            timeout ?? TimeSpan.FromMinutes(30),
+            cancellationToken);
+
+    public Task<SegmentationResult> GetSegmentationInfoAsync(
+        string storePath,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<SegmentationResult>(
+            EngineMethods.SegmentationInfo,
+            new SegmentationInfoParams { StorePath = storePath },
+            timeout ?? _requestTimeout,
+            cancellationToken);
+
     public async Task<ShutdownResult> ShutdownAsync(CancellationToken cancellationToken = default)
     {
         if (_disposed || _process.HasExited)

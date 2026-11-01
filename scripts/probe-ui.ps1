@@ -42,6 +42,7 @@ internal static class Program
     {
         var workspace = new WorkspaceWindow();
         var import = new ImportScanWindow();
+        var analysis = new ScanAnalysisWindow(@"C:\probe\store", 0.75);
         var settings = new SettingsWindow();
         var about = new AboutWindow("2026 (probe)");
 
@@ -58,6 +59,7 @@ internal static class Program
         Console.WriteLine("XAML and icon resources OK.");
         Console.WriteLine("Workspace: " + workspace.Title);
         Console.WriteLine("Import:    " + import.Title);
+        Console.WriteLine("Analysis:  " + analysis.Title);
         Console.WriteLine("Settings:  " + settings.Title);
         Console.WriteLine("About:     " + about.Title);
     }

@@ -3,7 +3,51 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
-## [0.3.0] - 2026-11-01 — Phase 3: point cloud engine
+## [0.4.0] - 2026-11-01 - Phase 4: Scan Analysis baseline
+
+### Added
+
+- Geometric semantic/instance segmentation baseline using Open3D RANSAC plane
+  extraction over a sampled and optionally voxel-downsampled cloud.
+- Plane instances with normal, offset, centroid, bounds, area, inlier count and
+  floor/ceiling/wall classification.
+- Plane-fit confidence from planarity, density, size, coverage and fit error,
+  with an explicit note that it is not dimensional accuracy.
+- Analysis result persisted atomically at
+  `<scan store>/analysis/segmentation.json`.
+- JSON-RPC `segmentation.run` and `segmentation.info`, advertised in
+  `initialize.capabilities`.
+- Typed `ANALYSIS_NOT_FOUND` error (`-32026`).
+- C# segmentation DTOs, `PythonEngineClient` methods, real Scan Analysis dialog
+  and workspace detected-element/confidence summary.
+- Ribbon **Scan Analysis** now runs the real baseline instead of showing a
+  placeholder dialog.
+- Python synthetic-room tests, C# contract tests and a real C# -> Python
+  segmentation integration test.
+
+### Changed
+
+- Product and engine version 0.4.0.
+- Workspace phase badge and processing metrics reflect Phase 4.
+- `README`, architecture, testing, roadmap, checklist and limitations updated.
+
+### Verified
+
+- 57 Python tests and 30 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the workspace, import, analysis, settings and about
+  windows.
+- Engine smoke test advertises segmentation capabilities at 0.4.0.
+
+### Known gaps
+
+- The segmentation baseline is geometric, not a trained ML model. It does not
+  detect doors, windows, furniture or curved surfaces.
+- Confidence is a plane-fit score, not a dimensional accuracy figure.
+- No Revit geometry is created; results are JSON data only.
+- Manual in-Revit verification of Phases 2-4 is pending.
+
+## [0.3.0] - 2026-11-01 - Phase 3: point cloud engine
 
 ### Added
 

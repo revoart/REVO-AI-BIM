@@ -46,6 +46,7 @@ public sealed class WorkspaceViewModel : ObservableObject
     private string _statusMessage = "Workspace ready. No scan loaded.";
     private bool _isBusy;
     private bool _importDialogOpen;
+    private bool _analysisDialogOpen;
     private double _progressValue;
     private int _detectedElements;
     private string _confidenceText = "—";
@@ -318,6 +319,9 @@ public sealed class WorkspaceViewModel : ObservableObject
     /// <summary>Opens the import dialog from the ribbon while the workspace is visible.</summary>
     public void BeginImport() => _ = BeginImportAsync();
 
+    /// <summary>Runs Scan Analysis for the imported scan, if one is loaded.</summary>
+    public void BeginAnalysis() => _ = BeginAnalysisAsync();
+
     private async Task RefreshAsync()
     {
         if (IsBusy)
@@ -537,6 +541,74 @@ public sealed class WorkspaceViewModel : ObservableObject
         }
 
         return Task.CompletedTask;
+    }
+
+    private Task BeginAnalysisAsync()
+    {
+        if (_analysisDialogOpen)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (string.IsNullOrWhiteSpace(ScanStorePath) ||
+            ScanStorePath == "—" ||
+            !Directory.Exists(ScanStorePath))
+        {
+            const string message = "Import a scan before running Scan Analysis.";
+            Errors.Add(message);
+            StatusMessage = message;
+            return Task.CompletedTask;
+        }
+
+        _analysisDialogOpen = true;
+        try
+        {
+            var window = new ScanAnalysisWindow(ScanStorePath, ConfidenceThreshold);
+            SegmentationResult? applied = null;
+
+            window.ViewModel.AnalysisCompleted += result =>
+            {
+                applied = result;
+                ApplyAnalysisResult(result);
+            };
+
+            if (_revitWindowHandle != IntPtr.Zero)
+            {
+                new System.Windows.Interop.WindowInteropHelper(window) { Owner = _revitWindowHandle };
+            }
+
+            window.ShowDialog();
+
+            if (applied is null && window.ViewModel.Result is { } result)
+            {
+                ApplyAnalysisResult(result);
+            }
+        }
+        catch (Exception ex)
+        {
+            AddError("Could not open the Scan Analysis dialog.", ex);
+        }
+        finally
+        {
+            _analysisDialogOpen = false;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void ApplyAnalysisResult(SegmentationResult result)
+    {
+        DetectedElements = result.Summary.Segments;
+        ConfidenceText = result.Summary.MeanConfidence.ToString("P1", CultureInfo.CurrentCulture);
+        ProgressValue = 100;
+        ScanStatus = $"Analyzed · {result.Summary.Segments:N0} planar instance(s)";
+        StatusMessage =
+            $"Scan analysis found {result.Summary.Segments:N0} planar instance(s) at " +
+            $"{result.Summary.MeanConfidence:P1} mean plane-fit confidence. " +
+            "No Revit geometry was created.";
+        RevoLog.Info(
+            $"Workspace applied analysis {result.ScanId}: {result.Summary.Segments} segments, " +
+            $"{result.Summary.MeanConfidence:0.000} mean confidence.");
     }
 
     private void ApplyImportResult(PointCloudImportResult result)

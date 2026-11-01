@@ -26,7 +26,7 @@ confidence, geometry primitives). The C# side owns every Revit transaction.
 | --- | --- | --- |
 | `RevoAI.Contracts` | `net8.0` | Wire DTOs, protocol version, error codes, JSON settings. No Revit or Windows dependency, so it is reusable by a future Revit 2025 build. |
 | `RevoAI.Revit` | `net10.0-windows` | Add-in entry point, configuration, logging, engine process client, ribbon, WPF workspace and point cloud import dialog. |
-| `RevoAI.Engine` | Python ≥3.11 | Local processing service: transport, handshake, point cloud readers, preprocessing, chunk store and spatial queries. |
+| `RevoAI.Engine` | Python ≥3.11 | Local processing service: transport, handshake, point cloud readers, preprocessing, chunk store, spatial queries and the geometric segmentation baseline. |
 | `RevoAI.Geometry` | Python ≥3.11 | Unit kernel and, in later phases, reconstruction algorithms. |
 
 ## 3. Transport and protocol
@@ -38,7 +38,8 @@ stdin/stdout. See [ADR 0002](adr/0002-engine-ipc.md).
 - Request `id` is a string. Responses echo it. Notifications have no `id` and
   are currently ignored by the client (reserved for progress events).
 - Methods: `initialize`, `ping`, `shutdown`, `pointcloud.import`,
-  `pointcloud.info`, `pointcloud.query`.
+  `pointcloud.info`, `pointcloud.query`, `segmentation.run`,
+  `segmentation.info`.
 - Major protocol version must match (`1.x` accepted). Mismatch returns
   `-32010`.
 - Methods other than `ping`/`shutdown` require `initialize` first (`-32011`).
@@ -124,22 +125,50 @@ source file
 - A scan store is written to a temporary folder and renamed into place, so a
   failed import does not leave a half-written store.
 
-## 9. Threading rules
+## 9. Scan Analysis baseline
+
+Phase 4 intentionally ships a deterministic geometric baseline rather than
+claiming a trained model that does not exist.
+
+```
+point cloud store
+  → global sample (maxPoints)
+  → optional voxel downsampling
+  → RANSAC plane extraction (Open3D)
+  → floor / ceiling / wall / other classification
+  → plane fit, density, size, coverage and confidence signals
+  → analysis/segmentation.json
+```
+
+- Each result element is an **instance** with an id, kind, plane normal/offset,
+  centroid, bounds, area, inlier count and confidence.
+- Classification uses the plane's vertical normal component and its centroid
+  height relative to the analysed cloud. Flat planes near the bottom are floors;
+  flat planes near the top are ceilings; vertical planes are walls.
+- Confidence combines planarity, sampling density, segment size, coverage and
+  fit error. It is explicitly labelled as plane-fit confidence, not dimensional
+  accuracy.
+- Sampling and voxel settings are recorded with the result. Large scans can miss
+  small surfaces when the point limit is low.
+- Analysis writes JSON only. It never creates Revit geometry.
+- `segmentation.info` reads the stored result and returns the same shape.
+
+## 10. Threading rules
 
 - Revit API calls run only on Revit's main thread.
 - The modeless WPF UI (Phases 2-3) marshals Revit API work through `ExternalEvent`.
 - The Python engine runs out of process, so it cannot touch the Revit API.
 - Long operations must be cancellable and must report progress.
 
-## 10. Versioning
+## 11. Versioning
 
-- Product version follows SemVer (`0.3.0`).
+- Product version follows SemVer (`0.4.0`).
 - Assembly/file versions mirror it.
 - Protocol has an independent `MAJOR.MINOR`.
 - Each Revit version gets its own build output folder
   (`bin\<Configuration>\<RevitVersion>`) and its own manifest installation.
 
-## 11. User interface and Revit marshalling
+## 12. User interface and Revit marshalling
 
 - Ribbon built in `Ribbon/RevoRibbon.cs`; each button points at an
   `IExternalCommand` in `Commands/`.
@@ -148,6 +177,9 @@ source file
 - **Import Scan** opens the modeless workspace and a real import dialog. The
   dialog sends the file to `pointcloud.import`; it does not draw or invent
   geometry. The workspace displays the returned metadata.
+- **Scan Analysis** opens the workspace and a real analysis dialog for the
+  imported store. The dialog calls `segmentation.run` and displays segments and
+  confidence. It still creates no Revit geometry.
 - The modeless `WorkspaceWindow` binds to `WorkspaceViewModel`.
 - Every Revit API call from the window goes through `RevitTaskRunner`, which
   queues work and raises an `ExternalEvent`. The WPF thread never touches
@@ -158,7 +190,7 @@ source file
 - Settings are persisted through `RevoConfigWriter`; the engine reads them when
   it starts.
 
-## 12. Error handling
+## 13. Error handling
 
 All engine failures are typed `RpcError` values with a machine code, a human
 message and, where possible, a `remedy`. The add-in must present the remedy and

@@ -33,12 +33,11 @@ public sealed class ImportScanCommand : RevoCommandBase
 [Regeneration(RegenerationOption.Manual)]
 public sealed class ScanAnalysisCommand : RevoCommandBase
 {
-    protected override Result ExecuteCore(ExternalCommandData commandData) =>
-        PhaseMessages.Show(
-            "Scan Analysis",
-            "Scans can be imported in Phase 3, but semantic and instance analysis " +
-            "arrives in Phase 4.\n\nNo scan is analyzed and no model geometry is created " +
-            "in this build.");
+    protected override Result ExecuteCore(ExternalCommandData commandData)
+    {
+        WorkspaceController.AnalyzeScan(commandData.Application);
+        return Result.Succeeded;
+    }
 }
 
 [Transaction(TransactionMode.Manual)]

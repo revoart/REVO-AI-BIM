@@ -19,6 +19,7 @@ from typing import Any, TextIO
 from pydantic import ValidationError
 
 from . import __version__
+from .analysis import AnalysisError, load_segmentation, run_segmentation
 from .pointcloud import PointCloudError, PointCloudStore, import_point_cloud
 from .protocol import (
     CAPABILITIES,
@@ -27,6 +28,8 @@ from .protocol import (
     METHOD_POINTCLOUD_IMPORT,
     METHOD_POINTCLOUD_INFO,
     METHOD_POINTCLOUD_QUERY,
+    METHOD_SEGMENTATION_INFO,
+    METHOD_SEGMENTATION_RUN,
     METHOD_SHUTDOWN,
     PROTOCOL_VERSION,
     ErrorCode,
@@ -42,6 +45,9 @@ from .protocol import (
     PointCloudQueryResult,
     RpcRequest,
     RpcResponse,
+    SegmentationInfoParams,
+    SegmentationResult,
+    SegmentationRunParams,
     ShutdownResult,
     error_response,
     is_compatible,
@@ -330,6 +336,69 @@ def dispatch(state: EngineState, request: RpcRequest) -> RpcResponse | None:
         return RpcResponse(
             id=request.id,
             result=result.model_dump(by_alias=True, exclude_none=True),
+        )
+
+    if request.method == METHOD_SEGMENTATION_RUN:
+        try:
+            params = SegmentationRunParams.model_validate(request.params or {})
+        except ValidationError as exc:
+            return error_response(
+                request.id,
+                ErrorCode.INVALID_PARAMS,
+                "Invalid segmentation parameters.",
+                data=str(exc),
+            )
+
+        try:
+            result = run_segmentation(params)
+        except (PointCloudError, AnalysisError) as exc:
+            return error_response(
+                request.id,
+                exc.code,
+                exc.message,
+                data=exc.data,
+                remedy=exc.remedy,
+            )
+
+        LOG.info(
+            "Segmented %s: %s segment(s), mean confidence %.3f, %s",
+            result["scanId"],
+            result["summary"]["segments"],
+            result["summary"]["meanConfidence"],
+            result["resultPath"],
+        )
+        validated = SegmentationResult.model_validate(result)
+        return RpcResponse(
+            id=request.id,
+            result=validated.model_dump(by_alias=True),
+        )
+
+    if request.method == METHOD_SEGMENTATION_INFO:
+        try:
+            params = SegmentationInfoParams.model_validate(request.params or {})
+        except ValidationError as exc:
+            return error_response(
+                request.id,
+                ErrorCode.INVALID_PARAMS,
+                "Invalid segmentation info parameters.",
+                data=str(exc),
+            )
+
+        try:
+            result = load_segmentation(params.store_path)
+        except (PointCloudError, AnalysisError) as exc:
+            return error_response(
+                request.id,
+                exc.code,
+                exc.message,
+                data=exc.data,
+                remedy=exc.remedy,
+            )
+
+        validated = SegmentationResult.model_validate(result)
+        return RpcResponse(
+            id=request.id,
+            result=validated.model_dump(by_alias=True),
         )
 
     return error_response(

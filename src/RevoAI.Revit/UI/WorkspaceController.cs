@@ -55,6 +55,13 @@ public static class WorkspaceController
         _viewModel?.BeginImport();
     }
 
+    /// <summary>Shows the workspace and runs Scan Analysis for the loaded scan.</summary>
+    public static void AnalyzeScan(UIApplication application)
+    {
+        Show(application);
+        _viewModel?.BeginAnalysis();
+    }
+
     public static void Close()
     {
         try

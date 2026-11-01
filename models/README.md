@@ -1,6 +1,7 @@
 # Models
 
-Trained model artefacts belong here from Phase 4 onward.
+Trained model artefacts belong here from a future ML phase onward. The Phase 4
+Scan Analysis baseline is deterministic geometry and uses no model weights.
 
 Rules:
 

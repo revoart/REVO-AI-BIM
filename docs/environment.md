@@ -71,6 +71,7 @@ for Revit 2025/2026; that assumption does not hold on this machine.
 1. The repository is inside OneDrive. Build outputs are git-ignored, but
    OneDrive may still lock files. Large scans should live outside OneDrive.
 2. No Revit 2025 means Phase 2 manual verification can only cover 2026 and 2027.
-3. Open3D is installed for Phase 3; Phase 1 does not import it at runtime.
+3. Open3D is installed and used by the Phase 4 segmentation baseline. The point
+   cloud reader phase does not require it.
 4. The `py` launcher requires an explicit `-3.14`; the client handles this
    automatically.

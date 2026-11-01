@@ -42,6 +42,8 @@ public static class EngineMethods
     public const string PointCloudImport = "pointcloud.import";
     public const string PointCloudInfo = "pointcloud.info";
     public const string PointCloudQuery = "pointcloud.query";
+    public const string SegmentationRun = "segmentation.run";
+    public const string SegmentationInfo = "segmentation.info";
 }
 
 /// <summary>
@@ -67,6 +69,7 @@ public static class EngineErrorCodes
     public const int ProcessingFailed = -32023;
     public const int StoreNotFound = -32024;
     public const int InvalidUnit = -32025;
+    public const int AnalysisNotFound = -32026;
 }
 
 /// <summary>Base shape of a JSON-RPC 2.0 request.</summary>

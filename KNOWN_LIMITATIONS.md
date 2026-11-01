@@ -5,19 +5,22 @@ This file is deliberately blunt. Anything listed here is **not working** or
 
 ## Product scope (current)
 
-1. **Import works; the rest of the UI is still a shell.** E57, LAS, LAZ, PLY and
-   XYZ/TXT scans can be imported, preprocessed and stored locally. Scan
-   Analysis, Generate BIM, Model Review and Quality Check still show honest
-   "not implemented" dialogs. The only model-changing action is creating levels.
+1. **Import and Scan Analysis work; reconstruction commands are still shells.**
+   E57, LAS, LAZ, PLY and XYZ/TXT scans can be imported, and Scan Analysis runs
+   the geometric segmentation baseline. Generate BIM, Model Review and Quality
+   Check still show honest "not implemented" dialogs. The only model-changing
+   action is creating levels.
 2. **No RCP/RCS support.** Those formats require a verified Autodesk workflow
    and are not accepted by the importer.
-3. **No point-cloud display in Revit.** The workspace shows import metadata;
-   it does not draw points, meshes or placeholder geometry in the model.
-4. **No AI.** No model, no training, no inference, no segmentation.
+3. **No point-cloud display in Revit.** The workspace shows import and analysis
+   metadata; it does not draw points, meshes or placeholder geometry.
+4. **No trained ML.** Scan Analysis is a deterministic geometric RANSAC
+   baseline. There is no neural network, training dataset or learned model.
 5. **No BIM reconstruction.** No walls, floors, doors, windows or other scanned
-   elements are created. Level creation is project setup, not Scan-to-BIM.
-6. **No accuracy figures.** Nothing has been measured because nothing is
-   reconstructed yet.
+   elements are created. Detected planes are JSON analysis data, not Revit
+   geometry. Level creation is project setup, not Scan-to-BIM.
+6. **No accuracy figures.** Nothing has been reconstructed or measured yet.
+   Plane-fit confidence is not dimensional accuracy.
 7. **No import streaming or cancellation.** Readers load the source cloud
    before chunking, so peak memory scales with the source file. The UI shows an
    indeterminate progress bar, and the engine has no cancel request. Phase 9.
@@ -29,6 +32,24 @@ This file is deliberately blunt. Anything listed here is **not working** or
    unit. Warnings are returned and shown in the UI.
 10. **Vendor E57 variants are not covered.** E57 tests use files written by
     `pye57`; they prove the reader and pose handling, not every scanner export.
+
+## Scan Analysis limits (Phase 4)
+
+- The baseline detects planar instances only: floors, ceilings, walls and other
+  dominant planes. Doors, windows, furniture, columns, stairs and curved
+  surfaces are not classified.
+- It has no room topology, no multi-storey separation, no surface merging into
+  building elements and no model coordinates yet. Only the lowest and highest
+  horizontal planes are called floor and ceiling; intermediate levels are
+  labelled `horizontal`.
+- A plane may be split into multiple instances when a coplanar surface has gaps
+  or different sampling density. No merge step exists yet.
+- Confidence combines planarity, sampling density, size, coverage and fit error.
+  It is a fit-quality score, not an accuracy or acceptance guarantee.
+- Analysis is limited by `maxPoints` and optional voxel downsampling; low-density
+  or very large scans can miss small surfaces.
+- The result is written to `analysis/segmentation.json`; it is not imported into
+  Revit and does not create geometry.
 
 ## Environment and compatibility
 

@@ -64,6 +64,25 @@ report contains test evidence.
 - [ ] Manual import test in Revit 2027
 - [ ] Phase reviewed and approved
 
-## Phases 4–10
+## Phase 4 — Scan Analysis baseline
+
+- [x] Sample and voxel-downsample the imported store for analysis
+- [x] RANSAC plane extraction with configurable distance, minimum points and plane limit
+- [x] Floor, ceiling, wall and other horizontal/sloped classification
+- [x] Instance data: normal, offset, centroid, bounds, area, point count
+- [x] Plane-fit confidence with explicit meaning in the result
+- [x] Atomic `analysis/segmentation.json` result
+- [x] JSON-RPC `segmentation.run` / `segmentation.info` and typed `ANALYSIS_NOT_FOUND`
+- [x] C# DTOs, engine client methods and real Scan Analysis dialog
+- [x] Workspace detected-element and mean-confidence summary
+- [x] Synthetic-room Python tests
+- [x] C# contract test and real C# ↔ Python segmentation integration test
+- [x] Revit 2026 and 2027 Release builds with zero warnings
+- [x] WPF probe constructs the Scan Analysis window
+- [ ] Manual Scan Analysis test in Revit 2026
+- [ ] Manual Scan Analysis test in Revit 2027
+- [ ] Phase reviewed and approved
+
+## Phases 5–10
 
 Not started. See `ROADMAP.md`.

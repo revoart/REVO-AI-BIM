@@ -20,7 +20,7 @@ $env:PYTHONPATH = @(
 $env:PYTHONUTF8 = '1'
 
 $requests = @(
-    '{"jsonRpc":"2.0","id":"1","method":"initialize","params":{"clientName":"smoke-test","clientVersion":"0.3.0","protocolVersion":"1.0"}}',
+    '{"jsonRpc":"2.0","id":"1","method":"initialize","params":{"clientName":"smoke-test","clientVersion":"0.4.0","protocolVersion":"1.0"}}',
     '{"jsonRpc":"2.0","id":"2","method":"ping","params":{"message":"hello"}}',
     '{"jsonRpc":"2.0","id":"3","method":"shutdown"}'
 ) -join "`n"

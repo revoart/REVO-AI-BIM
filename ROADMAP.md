@@ -8,7 +8,7 @@ phase starts. No phase is marked complete without test evidence.
 | 1 | Project foundation: repo, builds, environment, IPC contract, logging, config, tests | **Complete (verified)** |
 | 2 | Revit ribbon + WPF workspace + `ExternalEvent` plumbing | **Implemented — manual in-Revit check pending** |
 | 3 | Point cloud engine: E57/XYZ/PLY/LAS/LAZ, preprocessing, chunking, indexing | **Implemented — manual in-Revit check pending** |
-| 4 | AI building intelligence: semantic/instance segmentation, confidence | Not started |
+| 4 | AI building intelligence: semantic/instance segmentation, confidence | **Implemented - manual in-Revit check pending** |
 | 5 | Native walls and floors: first commercial milestone | Not started |
 | 6 | Doors and windows: openings, hosted families | Not started |
 | 7 | Ceilings, roofs, stairs, railings, columns, beams, rooms | Not started |
@@ -53,6 +53,23 @@ phase starts. No phase is marked complete without test evidence.
   `pointcloud.query`, with a real C# client and import dialog.
 - Workspace scan summary showing format, unit, stored points, chunks, bounds and
   local store path.
+
+## Phase 4 deliverables (implemented)
+
+- Geometric RANSAC plane extraction over a sampled/voxelised point cloud.
+- Instance geometry for each detected plane: normal, offset, centroid, bounds,
+  area and inlier count.
+- Semantic classification into floor, ceiling, wall, horizontal and sloped.
+- Plane-fit confidence from planarity, sampling density, segment size, coverage
+  and fit error; the method and its meaning are written into every result.
+- JSON result persisted beside the scan at `analysis/segmentation.json`.
+- JSON-RPC methods `segmentation.run` and `segmentation.info`.
+- C# DTOs, engine client methods, real Scan Analysis dialog and workspace
+  detected-element/confidence summary.
+- Python tests with synthetic rooms and C# end-to-end engine tests.
+
+This baseline is deterministic geometry, not a trained neural network and not a
+dimensional-accuracy claim. Trained models and BIM geometry remain later work.
 
 ## Product milestone definition
 

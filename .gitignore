@@ -45,6 +45,8 @@ samples/**/*.rcs
 samples/**/*.pcd
 samples/**/*.npy
 samples/**/*.npz
+samples/**/metadata.json
+samples/**/analysis/
 models/**/*.pt
 models/**/*.pth
 models/**/*.onnx

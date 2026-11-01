@@ -58,6 +58,8 @@ def test_initialize_returns_honest_capabilities() -> None:
         "pointcloud.import",
         "pointcloud.info",
         "pointcloud.query",
+        "segmentation.run",
+        "segmentation.info",
     ]
 
 
