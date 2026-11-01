@@ -166,6 +166,9 @@ segmentation.json
 ```
 
 - Plan creation is read-only. It writes JSON beside the scan.
+- The plan can come from the built-in geometric baseline or from an external AI
+  tool's JSON file. External plans are bounds-checked against the scan and
+  normalized before preview; they are never executed directly.
 - Floors use ordered plane boundaries from segmentation; the current boundary
   is a convex hull, so concave spaces are simplified.
 - Walls use the longest boundary extent as a line. The base level is the nearest

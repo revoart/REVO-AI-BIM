@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +16,7 @@ from revoai_engine.protocol import (
     SegmentationInfoParams,
     SegmentationRunParams,
 )
-from revoai_engine.reconstruction import create_plan
+from revoai_engine.reconstruction import PlanError, create_plan
 from revoai_engine.service import EngineState, dispatch
 
 
@@ -220,6 +221,107 @@ def test_reconstruction_plan_over_protocol(tmp_path: Path) -> None:
     assert len(response.result["levels"]) == 1
     assert len(response.result["floors"]) == 1
     assert len(response.result["walls"]) == 4
+
+
+def test_external_ai_plan_is_validated_and_normalized(tmp_path: Path) -> None:
+    imported = _import_room(tmp_path, name="external-room")
+    plan_path = tmp_path / "external-plan.json"
+    plan_path.write_text(
+        json.dumps(
+            {
+                "method": "external-ai/room-v1",
+                "levels": [
+                    {"id": "L1", "name": "Level 1", "elevationMeters": 0.0}
+                ],
+                "floors": [
+                    {
+                        "id": "F1",
+                        "levelId": "L1",
+                        "boundary": [
+                            [0.0, 0.0, 0.0],
+                            [4.0, 0.0, 0.0],
+                            [4.0, 3.0, 0.0],
+                            [0.0, 3.0, 0.0],
+                        ],
+                        "confidence": 0.91,
+                    }
+                ],
+                "walls": [
+                    {
+                        "id": "W1",
+                        "levelId": "L1",
+                        "start": [0.0, 0.0, 0.0],
+                        "end": [4.0, 0.0, 0.0],
+                        "heightMeters": 2.7,
+                        "confidence": 0.88,
+                    },
+                    {
+                        "id": "W2",
+                        "levelId": "L1",
+                        "start": [4.0, 0.0, 0.0],
+                        "end": [4.0, 3.0, 0.0],
+                        "heightMeters": 2.7,
+                        "confidence": 0.86,
+                    },
+                ],
+                "rooms": [{"id": "ignored"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = create_plan(
+        ReconstructionPlanParams(
+            store_path=imported["storePath"],
+            external_plan_path=str(plan_path),
+            max_elements=20,
+        )
+    )
+
+    assert result["method"] == "external-bim-plan/1"
+    assert len(result["levels"]) == 1
+    assert len(result["floors"]) == 1
+    assert len(result["walls"]) == 2
+    assert result["floors"][0]["areaM2"] == pytest.approx(12.0)
+    assert any("rooms" in warning for warning in result["warnings"])
+    assert Path(result["resultPath"]).is_file()
+
+
+def test_external_ai_plan_rejects_invalid_geometry(tmp_path: Path) -> None:
+    imported = _import_room(tmp_path, name="external-invalid")
+    plan_path = tmp_path / "invalid-plan.json"
+    plan_path.write_text(
+        json.dumps(
+            {
+                "levels": [{"id": "L1", "elevationMeters": 0.0}],
+                "floors": [
+                    {
+                        "levelId": "L1",
+                        "boundary": [[0, 0, 0], [4, 0, 0], [4, 3, 0]],
+                    }
+                ],
+                "walls": [
+                    {
+                        "levelId": "L1",
+                        "start": [0, 0, 0],
+                        "end": [0, 0, 0],
+                        "heightMeters": 2.7,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(PlanError) as error:
+        create_plan(
+            ReconstructionPlanParams(
+                store_path=imported["storePath"],
+                external_plan_path=str(plan_path),
+            )
+        )
+
+    assert error.value.code == ErrorCode.PLAN_INVALID
 
 
 def test_segmentation_not_found_is_typed(tmp_path: Path) -> None:

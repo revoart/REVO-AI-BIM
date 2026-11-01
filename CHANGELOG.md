@@ -14,6 +14,10 @@ Semantic Versioning.
 - Stage-specific headers, subtitles and continuation buttons.
 - Levels table no longer auto-generates duplicate columns.
 - **Create in Revit** is disabled until a plan preview exists.
+- Generate BIM can consume an external AI plan JSON file, validate it with
+  `PLAN_INVALID` (`-32027`), normalize it and preview it before creation.
+- Added the external Claude/Astra BIM plan contract in
+  `docs/external-bim-plan.md`.
 - Current scan summary remains visible in the sidebar while working.
 - The workspace project information, levels, diagnostics and engine controls
   moved into the Project setup stage.
@@ -21,7 +25,7 @@ Semantic Versioning.
 
 ### Verified
 
-- 59 Python tests and 32 .NET tests pass.
+- 61 Python tests and 32 .NET tests pass.
 - Revit 2026/2027 Release builds still complete with zero warnings.
 - WPF probe still passes for all windows and icons.
 
@@ -53,8 +57,7 @@ Semantic Versioning.
 
 - 59 Python tests and 32 .NET tests pass.
 - Revit 2026 and 2027 Release builds complete with zero warnings.
-- WPF probe constructs the workspace, import, analysis, Generate BIM and settings
-  windows.
+- WPF probe constructs the workspace, settings and about windows.
 - Real engine plan integration test passes.
 - Synthetic room produces one level, one floor and four walls.
 

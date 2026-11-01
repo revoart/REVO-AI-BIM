@@ -122,6 +122,11 @@ previews native floors and walls and creates them in one Revit transaction after
 confirmation. Created elements are marked `REVO-INFERRED`; no geometry is created
 until the user clicks **Create in Revit**.
 
+The Generate BIM stage can also validate and consume a JSON plan produced by an
+external AI tool such as Claude or Astra 6. See
+[docs/external-bim-plan.md](docs/external-bim-plan.md). That integration is
+file-based today; Revo does not call an external model itself.
+
 ## Documentation
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — components, boundaries, protocol
@@ -134,6 +139,7 @@ until the user clicks **Create in Revit**.
 - [docs/phase-3-report.md](docs/phase-3-report.md) - Phase 3 completion report
 - [docs/phase-4-report.md](docs/phase-4-report.md) - Phase 4 completion report
 - [docs/phase-5-report.md](docs/phase-5-report.md) - Phase 5 completion report
+- [docs/external-bim-plan.md](docs/external-bim-plan.md) - External AI BIM plan JSON contract
 - [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) — what does not work yet
 
 ## License

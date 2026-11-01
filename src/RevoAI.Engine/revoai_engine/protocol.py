@@ -60,6 +60,7 @@ class ErrorCode(IntEnum):
     STORE_NOT_FOUND = -32024
     INVALID_UNIT = -32025
     ANALYSIS_NOT_FOUND = -32026
+    PLAN_INVALID = -32027
 
 
 class RpcError(BaseModel):
@@ -447,6 +448,7 @@ class SegmentationResult(CamelModel):
 
 class ReconstructionPlanParams(CamelModel):
     store_path: str = Field(min_length=1)
+    external_plan_path: str | None = None
     confidence_threshold: float = 0.75
     fallback_wall_height_meters: float = 2.7
     level_tolerance_meters: float = 0.25

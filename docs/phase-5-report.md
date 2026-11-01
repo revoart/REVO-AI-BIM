@@ -16,6 +16,7 @@ Revit is **not yet manually verified**.
 | Closed floor polygons | Working, tested |
 | Wall lines with base level and height | Working, tested |
 | `reconstruction.plan` JSON-RPC method | Working, tested |
+| External AI plan JSON validation (`PLAN_INVALID`) | Working, tested |
 | Generate BIM preview stage in the Workspace window | Implemented, XAML probe passed |
 | Native Revit `Floor.Create` / `Wall.Create` | Implemented, build-tested; manual check pending |
 | Existing level reuse / missing level creation | Implemented; manual check pending |
@@ -48,7 +49,7 @@ segmentation.json
 
 | Check | Result |
 | --- | --- |
-| Python tests | **59 passed** |
+| Python tests | **61 passed** |
 | .NET tests | **32 passed** |
 | Revit 2026 Release build | **0 warnings, 0 errors** |
 | Revit 2027 Release build | **0 warnings, 0 errors** |
@@ -56,6 +57,8 @@ segmentation.json
 | Synthetic room plan | **1 level, 1 floor, 4 walls** |
 | Real C# → Python `reconstruction.plan` | **Passed** |
 | Real 27.8M-point E57 plan | **2 levels, 3 floors, 0 walls** |
+| External AI plan validation and normalization | **Passed** |
+| Invalid external plan rejected with `PLAN_INVALID` | **Passed** |
 
 The real scan did not produce a wall instance above the 0.75 confidence
 threshold; the plan therefore contains floors only. That is an honest result,
@@ -80,7 +83,8 @@ not a wall-creation test.
    "Do Not Load" hides the Revo tab.
 3. Import a scan, use the sidebar **2 Analyze scan** stage, then select **3 Generate BIM**.
 4. Click **Create preview** and confirm levels/floors/walls without any model
-   change.
+   change. Optionally repeat with **Use an external AI BIM plan (JSON)** and a
+   validated plan file.
 5. Click **Create in Revit**.
 6. Confirm native floors/walls, `REVO-INFERRED`, correct levels and no crash.
 7. Repeat for the other Revit version.

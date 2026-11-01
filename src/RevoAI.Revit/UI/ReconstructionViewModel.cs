@@ -21,6 +21,8 @@ public sealed class ReconstructionViewModel : ObservableObject
     private string _fallbackWallHeightText = "2.7";
     private string _levelToleranceText = "0.25";
     private string _maxElementsText = "200";
+    private bool _useExternalPlan;
+    private string _externalPlanPath = string.Empty;
     private bool _markInferred;
     private string _statusMessage = "Create a plan to preview native floors and walls before building them.";
     private string _errorMessage = string.Empty;
@@ -43,6 +45,7 @@ public sealed class ReconstructionViewModel : ObservableObject
         PreviewCommand = new AsyncRelayCommand(PreviewAsync, CanPreview);
         BuildCommand = new RelayCommand(Build, CanBuild);
         OpenStoreFolderCommand = new RelayCommand(OpenStoreFolder, () => Plan is not null);
+        BrowseExternalPlanCommand = new RelayCommand(BrowseExternalPlan, () => !IsBusy);
     }
 
     public event Action<ReconstructionBuildResult>? BuildCompleted;
@@ -56,6 +59,8 @@ public sealed class ReconstructionViewModel : ObservableObject
     public ICommand BuildCommand { get; }
 
     public ICommand OpenStoreFolderCommand { get; }
+
+    public ICommand BrowseExternalPlanCommand { get; }
 
     public string StorePath
     {
@@ -91,6 +96,18 @@ public sealed class ReconstructionViewModel : ObservableObject
     {
         get => _maxElementsText;
         set => SetProperty(ref _maxElementsText, value);
+    }
+
+    public bool UseExternalPlan
+    {
+        get => _useExternalPlan;
+        set => SetProperty(ref _useExternalPlan, value);
+    }
+
+    public string ExternalPlanPath
+    {
+        get => _externalPlanPath;
+        set => SetProperty(ref _externalPlanPath, value);
     }
 
     public bool MarkInferred
@@ -143,6 +160,7 @@ public sealed class ReconstructionViewModel : ObservableObject
                 OnPropertyChanged(nameof(BuildButtonText));
                 (PreviewCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
                 (BuildCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (BrowseExternalPlanCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
         }
     }
@@ -184,6 +202,12 @@ public sealed class ReconstructionViewModel : ObservableObject
         if (!CanPreview())
         {
             ErrorMessage = "Choose an existing scan store.";
+            return;
+        }
+
+        if (UseExternalPlan && !File.Exists(ExternalPlanPath))
+        {
+            ErrorMessage = "Choose an existing external BIM plan JSON file.";
             return;
         }
 
@@ -232,6 +256,7 @@ public sealed class ReconstructionViewModel : ObservableObject
             var plan = await client.CreateReconstructionPlanAsync(new ReconstructionPlanParams
             {
                 StorePath = StorePath,
+                ExternalPlanPath = UseExternalPlan ? ExternalPlanPath : null,
                 ConfidenceThreshold = confidence,
                 FallbackWallHeightMeters = wallHeight,
                 LevelToleranceMeters = tolerance,
@@ -330,6 +355,25 @@ public sealed class ReconstructionViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private void BrowseExternalPlan()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Choose an external BIM plan",
+            Filter = "BIM plan JSON (*.json)|*.json|All files (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false,
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            ExternalPlanPath = dialog.FileName;
+            UseExternalPlan = true;
+            StatusMessage = "External plan selected. Create a preview to validate it.";
+            ErrorMessage = string.Empty;
         }
     }
 

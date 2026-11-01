@@ -90,6 +90,7 @@ report contains test evidence.
 - [x] Floor level clustering and closed floor polygons
 - [x] Wall line endpoints, base level and height resolution
 - [x] `reconstruction.plan` JSON-RPC method and typed DTOs
+- [x] External AI plan JSON contract, validation and `PLAN_INVALID`
 - [x] Plan preview stage inside the single Workspace window
 - [x] Native `Floor.Create` / `Wall.Create` in one transaction
 - [x] Existing level reuse and missing level creation

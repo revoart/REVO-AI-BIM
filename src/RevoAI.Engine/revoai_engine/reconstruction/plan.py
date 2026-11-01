@@ -19,15 +19,20 @@ import numpy as np
 
 from .. import __version__
 from ..analysis import load_segmentation
-from .errors import plan_failed
+from ..pointcloud import PointCloudStore
+from .errors import plan_failed, plan_invalid
 
 METHOD = "geometric-floor-wall-plan/1"
+EXTERNAL_METHOD = "external-bim-plan/1"
 _ANALYSIS_DIR = "analysis"
 _PLAN_FILE = "reconstruction-plan.json"
 
 
 def create_plan(params) -> dict[str, Any]:
     started = time.perf_counter()
+    if params.external_plan_path:
+        return _create_external_plan(params, started)
+
     segmentation = load_segmentation(params.store_path)
     warnings: list[str] = []
     elements = segmentation.get("elements", [])
@@ -180,6 +185,234 @@ def create_plan(params) -> dict[str, Any]:
     }
     _write_result(store_path, result)
     return result
+
+
+def _create_external_plan(params, started: float) -> dict[str, Any]:
+    """Validate a plan produced by an external AI tool and normalize it.
+
+    The external tool is responsible for architectural reasoning. This function
+    only enforces the contract and coordinate bounds; it does not invent floors
+    or walls that the external plan did not provide.
+    """
+
+    store = PointCloudStore.open(params.store_path)
+    source = Path(params.external_plan_path).expanduser()
+    if not source.is_absolute():
+        source = source.resolve()
+    if not source.is_file():
+        raise plan_invalid(f"External plan file does not exist: '{source}'.")
+
+    try:
+        with source.open("r", encoding="utf-8") as stream:
+            payload = json.load(stream)
+    except (OSError, ValueError) as exc:
+        raise plan_invalid(
+            f"Could not read external plan '{source}'.",
+            data=str(exc),
+        ) from exc
+
+    if not isinstance(payload, dict):
+        raise plan_invalid("External plan must be a JSON object.")
+
+    warnings: list[str] = []
+    for unsupported in ("rooms", "openings", "ceilings"):
+        if payload.get(unsupported):
+            warnings.append(
+                f"Ignored external '{unsupported}'; this phase creates floors and walls only."
+            )
+
+    levels_raw = payload.get("levels")
+    floors_raw = payload.get("floors")
+    walls_raw = payload.get("walls")
+    if not isinstance(levels_raw, list) or not levels_raw:
+        raise plan_invalid("External plan must contain a non-empty 'levels' array.")
+    if not isinstance(floors_raw, list):
+        raise plan_invalid("External plan 'floors' must be an array.")
+    if not isinstance(walls_raw, list):
+        raise plan_invalid("External plan 'walls' must be an array.")
+
+    bounds = store.metadata.get("bounds", {})
+    minimum = np.asarray(bounds.get("min", [0.0, 0.0, 0.0]), dtype=np.float64)
+    maximum = np.asarray(bounds.get("max", [0.0, 0.0, 0.0]), dtype=np.float64)
+    extent = np.maximum(maximum - minimum, 0.0)
+    margin = max(5.0, float(np.max(extent)) * 0.05)
+
+    levels: list[dict[str, Any]] = []
+    level_ids: set[str] = set()
+    used_names: set[str] = set()
+    for index, raw in enumerate(levels_raw, start=1):
+        if not isinstance(raw, dict):
+            raise plan_invalid(f"Level {index} must be a JSON object.")
+        level_id = str(raw.get("id") or f"level-{index}")
+        if level_id in level_ids:
+            raise plan_invalid(f"Duplicate level id '{level_id}'.")
+        level_ids.add(level_id)
+        elevation = _finite_float(raw.get("elevationMeters"), f"level {level_id} elevation")
+        if not minimum[2] - margin <= elevation <= maximum[2] + margin:
+            raise plan_invalid(
+                f"Level {level_id} elevation {elevation:g} m is outside the scan z range."
+            )
+        name = str(raw.get("name") or f"Revo Level {index}")
+        base_name = name
+        suffix = 2
+        while name in used_names:
+            name = f"{base_name} ({suffix})"
+            suffix += 1
+        used_names.add(name)
+        levels.append(
+            {
+                "id": level_id,
+                "name": name,
+                "elevationMeters": round(elevation, 6),
+            }
+        )
+
+    floors: list[dict[str, Any]] = []
+    for index, raw in enumerate(floors_raw, start=1):
+        if not isinstance(raw, dict):
+            raise plan_invalid(f"Floor {index} must be a JSON object.")
+        level_id = str(raw.get("levelId") or "")
+        if level_id not in level_ids:
+            raise plan_invalid(f"Floor {index} references unknown level '{level_id}'.")
+        boundary_raw = raw.get("boundary")
+        if not isinstance(boundary_raw, list) or len(boundary_raw) < 3:
+            raise plan_invalid(f"Floor {index} boundary must contain at least three points.")
+        boundary = [
+            _validate_point(point, f"floor {index} boundary", minimum, maximum, margin)
+            for point in boundary_raw
+        ]
+        confidence, supplied = _confidence(raw.get("confidence"), warnings, f"floor {index}")
+        if not supplied:
+            warnings.append(f"Floor {index} has no confidence; 0 was recorded.")
+        area = float(raw.get("areaM2") or _polygon_area(boundary))
+        floors.append(
+            {
+                "id": str(raw.get("id") or f"floor-plan-{index}"),
+                "sourceSegmentId": str(raw.get("sourceSegmentId") or f"external-floor-{index}"),
+                "levelId": level_id,
+                "boundary": boundary,
+                "areaM2": round(area, 3),
+                "confidence": confidence,
+            }
+        )
+
+    walls: list[dict[str, Any]] = []
+    fallback_height = float(params.fallback_wall_height_meters)
+    for index, raw in enumerate(walls_raw, start=1):
+        if not isinstance(raw, dict):
+            raise plan_invalid(f"Wall {index} must be a JSON object.")
+        level_id = str(raw.get("levelId") or "")
+        if level_id not in level_ids:
+            raise plan_invalid(f"Wall {index} references unknown level '{level_id}'.")
+        start = _validate_point(raw.get("start"), f"wall {index} start", minimum, maximum, margin)
+        end = _validate_point(raw.get("end"), f"wall {index} end", minimum, maximum, margin)
+        length = float(np.linalg.norm(np.asarray(end[:2]) - np.asarray(start[:2])))
+        if length < 0.3:
+            raise plan_invalid(f"Wall {index} is shorter than 0.3 m.")
+        height_raw = raw.get("heightMeters")
+        if height_raw is None:
+            height = fallback_height
+            height_source = "fallback"
+            warnings.append(f"Wall {index} has no height; fallback height was used.")
+        else:
+            height = _finite_float(height_raw, f"wall {index} height")
+            height_source = str(raw.get("heightSource") or "external")
+        if not 0.5 <= height <= 10.0:
+            raise plan_invalid(f"Wall {index} height must be between 0.5 and 10 m.")
+        confidence, supplied = _confidence(raw.get("confidence"), warnings, f"wall {index}")
+        if not supplied:
+            warnings.append(f"Wall {index} has no confidence; 0 was recorded.")
+        walls.append(
+            {
+                "id": str(raw.get("id") or f"wall-plan-{index}"),
+                "sourceSegmentId": str(raw.get("sourceSegmentId") or f"external-wall-{index}"),
+                "levelId": level_id,
+                "start": start,
+                "end": end,
+                "heightMeters": round(height, 3),
+                "heightSource": height_source,
+                "confidence": confidence,
+            }
+        )
+
+    max_elements = int(params.max_elements)
+    total = len(floors) + len(walls)
+    if total > max_elements:
+        warnings.append(
+            f"Plan was limited to {max_elements} elements; {total - max_elements} were omitted."
+        )
+        floors = floors[:max_elements]
+        walls = walls[: max(0, max_elements - len(floors))]
+
+    result_path = store.path / _ANALYSIS_DIR / _PLAN_FILE
+    result = {
+        "scanId": store.metadata.get("scanId", store.path.name),
+        "storePath": str(store.path),
+        "method": EXTERNAL_METHOD,
+        "parameters": {
+            "externalPlanPath": str(source),
+            "externalMethod": payload.get("method"),
+            "fallbackWallHeightMeters": fallback_height,
+            "maxElements": max_elements,
+        },
+        "levels": levels,
+        "floors": floors,
+        "walls": walls,
+        "warnings": warnings,
+        "resultPath": str(result_path),
+        "createdAt": _utc_now(),
+        "engineVersion": __version__,
+        "elapsedMs": round((time.perf_counter() - started) * 1000.0, 3),
+    }
+    _write_result(store.path, result)
+    return result
+
+
+def _validate_point(
+    value: Any,
+    label: str,
+    minimum: np.ndarray,
+    maximum: np.ndarray,
+    margin: float,
+) -> list[float]:
+    if not isinstance(value, list) or len(value) != 3:
+        raise plan_invalid(f"{label} must be an [x, y, z] array.")
+    point = np.asarray([_finite_float(component, label) for component in value], dtype=np.float64)
+    if np.any(point < minimum - margin) or np.any(point > maximum + margin):
+        raise plan_invalid(f"{label} lies outside the scan bounds.")
+    return [round(float(component), 6) for component in point]
+
+
+def _finite_float(value: Any, label: str) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise plan_invalid(f"{label} must be numeric.") from exc
+    if not np.isfinite(number):
+        raise plan_invalid(f"{label} must be finite.")
+    return number
+
+
+def _confidence(
+    value: Any,
+    warnings: list[str],
+    label: str,
+) -> tuple[float, bool]:
+    if value is None:
+        return 0.0, False
+    confidence = _finite_float(value, f"{label} confidence")
+    if not 0.0 <= confidence <= 1.0:
+        raise plan_invalid(f"{label} confidence must be between 0 and 1.")
+    return round(confidence, 3), True
+
+
+def _polygon_area(boundary: list[list[float]]) -> float:
+    points = np.asarray(boundary, dtype=np.float64)
+    if points.shape[0] < 3:
+        return 0.0
+    x = points[:, 0]
+    y = points[:, 1]
+    return abs(float(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1))) / 2.0)
 
 
 def _build_levels(

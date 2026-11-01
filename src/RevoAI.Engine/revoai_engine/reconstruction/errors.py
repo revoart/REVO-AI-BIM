@@ -28,3 +28,15 @@ def plan_failed(message: str, *, data: str | None = None) -> PlanError:
         data=data,
         remedy="Rerun Scan Analysis with a lower confidence threshold or adjust the plan settings.",
     )
+
+
+def plan_invalid(message: str, *, data: str | None = None) -> PlanError:
+    return PlanError(
+        ErrorCode.PLAN_INVALID,
+        message,
+        data=data,
+        remedy=(
+            "Use the documented external BIM plan schema: metres, scan coordinates, "
+            "known level ids, finite floor polygons and non-zero wall lines."
+        ),
+    )

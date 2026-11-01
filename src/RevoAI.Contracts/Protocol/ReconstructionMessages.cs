@@ -7,6 +7,9 @@ public sealed class ReconstructionPlanParams
 {
     public required string StorePath { get; init; }
 
+    /// <summary>Optional JSON plan produced by an external AI tool.</summary>
+    public string? ExternalPlanPath { get; init; }
+
     public double ConfidenceThreshold { get; init; } = 0.75;
 
     public double FallbackWallHeightMeters { get; init; } = 2.7;

@@ -253,6 +253,47 @@ public sealed class EngineIntegrationTests
             Assert.Single(plan.Floors);
             Assert.Equal(4, plan.Walls.Count);
             Assert.True(File.Exists(plan.ResultPath));
+
+            var externalPath = Path.Combine(work, "external-plan.json");
+            await File.WriteAllTextAsync(
+                externalPath,
+                """
+                {
+                  "method": "external-ai/test-room",
+                  "levels": [
+                    { "id": "L1", "name": "Level 1", "elevationMeters": 0.0 }
+                  ],
+                  "floors": [
+                    {
+                      "id": "F1",
+                      "levelId": "L1",
+                      "boundary": [[0,0,0],[4,0,0],[4,3,0],[0,3,0]],
+                      "confidence": 0.9
+                    }
+                  ],
+                  "walls": [
+                    {
+                      "id": "W1",
+                      "levelId": "L1",
+                      "start": [0,0,0],
+                      "end": [4,0,0],
+                      "heightMeters": 2.7,
+                      "confidence": 0.9
+                    }
+                  ]
+                }
+                """);
+
+            var externalPlan = await client.CreateReconstructionPlanAsync(
+                new ReconstructionPlanParams
+                {
+                    StorePath = imported.StorePath,
+                    ExternalPlanPath = externalPath,
+                    MaxElements = 20,
+                });
+            Assert.Equal("external-bim-plan/1", externalPlan.Method);
+            Assert.Single(externalPlan.Floors);
+            Assert.Single(externalPlan.Walls);
         }
         finally
         {

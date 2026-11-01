@@ -559,6 +559,26 @@
                                          IsEnabled="{Binding Generate.IsNotBusy}" />
                                 <TextBlock Text="The store must already contain analysis/segmentation.json from Scan Analysis."
                                            Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+
+                                <CheckBox Content="Use an external AI BIM plan (JSON)"
+                                          IsChecked="{Binding Generate.UseExternalPlan}"
+                                          IsEnabled="{Binding Generate.IsNotBusy}"
+                                          Margin="0,14,0,6" />
+                                <Grid IsEnabled="{Binding Generate.UseExternalPlan}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Margin="0,0,8,0"
+                                             Text="{Binding Generate.ExternalPlanPath, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding Generate.IsNotBusy}" />
+                                    <Button Grid.Column="1" Content="Browse plan…"
+                                            Command="{Binding Generate.BrowseExternalPlanCommand}"
+                                            Style="{StaticResource SecondaryButton}" />
+                                </Grid>
+                                <TextBlock Text="The external tool must emit the documented levels/floors/walls JSON schema in metres. The engine validates it before preview."
+                                           Style="{StaticResource MutedText}" Margin="0,6,0,0" />
+
                                 <Grid Margin="0,16,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
