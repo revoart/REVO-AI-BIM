@@ -43,6 +43,7 @@ internal static class Program
         var workspace = new WorkspaceWindow();
         var settings = new SettingsWindow();
         var about = new AboutWindow("2026 (probe)");
+        var transcript = new KnowledgeTranscriptWindow();
 
         foreach (var name in new[] { "workspace", "import", "analysis", "generate", "review", "quality", "settings", "about" })
         {
@@ -58,6 +59,7 @@ internal static class Program
         Console.WriteLine("Workspace: " + workspace.Title);
         Console.WriteLine("Settings:  " + settings.Title);
         Console.WriteLine("About:     " + about.Title);
+        Console.WriteLine("Transcript:" + transcript.Title);
     }
 }
 '@

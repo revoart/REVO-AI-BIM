@@ -100,6 +100,22 @@ public static class WorkspaceController
             _viewModel?.ShowGenerateStage();
         });
 
+    /// <summary>Shows the workspace on the Knowledge stage.</summary>
+    public static void ShowKnowledge(UIApplication application) =>
+        RunWhenIdle(application, () =>
+        {
+            Show(application);
+            _viewModel?.ShowKnowledgeStage();
+        });
+    /// <summary>Shows the Knowledge stage and starts extraction of the active project.</summary>
+    public static void ExtractProjectKnowledge(UIApplication application) =>
+        RunWhenIdle(application, () =>
+        {
+            Show(application);
+            _viewModel?.ShowKnowledgeStage();
+            _viewModel?.Knowledge.ExtractProjectCommand.Execute(null);
+        });
+
     /// <summary>
     /// Runs work on Revit's main thread after the current external command has
     /// returned. A nested WPF modal loop or ExternalEvent raised from inside a

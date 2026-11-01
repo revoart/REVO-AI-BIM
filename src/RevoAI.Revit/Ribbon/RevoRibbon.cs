@@ -67,6 +67,16 @@ public static class RevoRibbon
             "RevoAIAbout", "About", assemblyPath, "about",
             "About Revo AI BIM",
             "Version, Revit compatibility, engine protocol and log location."));
+
+        var knowledgePanel = application.CreateRibbonPanel(TabName, "Knowledge");
+        knowledgePanel.AddItem(CreateButton<Commands.KnowledgeCommand>(
+            "RevoAIKnowledge", "Knowledge Library", assemblyPath, "review",
+            "Open the local BIM knowledge library",
+            "Search, review and inspect locally stored BIM techniques, API notes and verified projects."));
+        knowledgePanel.AddItem(CreateButton<Commands.ExtractKnowledgeCommand>(
+            "RevoAIExtractKnowledge", "Extract Project", assemblyPath, "analysis",
+            "Extract the active project into the local knowledge library",
+            "Read-only extraction of levels, walls, floors, doors, windows and parameters. The project is not modified."));
     }
 
     private static PushButtonData CreateButton<TCommand>(

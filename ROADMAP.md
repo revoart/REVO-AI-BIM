@@ -89,6 +89,30 @@ This milestone uses default Revit floor/wall types and convex-hull floor
 boundaries. Doors, windows, ceilings, wall thickness control and accuracy
 measurement remain later work.
 
+## Phase 5.1 deliverables (implemented)
+
+- Persistent local knowledge library at `%LOCALAPPDATA%\RevoAI\knowledge`.
+- SQLite schema with sources, documents, chunks, records, provenance, reviews,
+  project extractions, elements, decisions and benchmarks.
+- FTS5 search over records and source chunks.
+- Transcript and document import with source metadata, licence and content-hash
+  deduplication.
+- Structured technique records with procedure, API operations, conditions,
+  constraints, limitations, confidence and provenance.
+- Review workflow: extracted, pending review, approved, rejected, needs
+  correction, plus Revit/point-cloud verification flags.
+- Approved-only retrieval context for Astra, with citation logging.
+- Read-only Revit project extraction for levels, walls, floors, ceilings, roofs,
+  doors, windows, stairs, railings, columns, rooms and grids.
+- Knowledge library stage in the workspace and a Knowledge ribbon panel.
+- Checksummed backup and provenance-preserving JSONL export.
+- Python and .NET tests for persistence, review, retrieval, extraction,
+  duplicate handling, backup/restore and export.
+
+Not yet implemented: embeddings/vector search, automatic YouTube ingestion, PDF
+parsing, benchmark UI and any dimensional-accuracy claim. Live Astra remains
+blocked without credentials or the subscription backend.
+
 ## Product milestone definition
 
 Phase 5 is the first commercially meaningful milestone: a real E57 residential

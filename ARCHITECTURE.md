@@ -207,7 +207,7 @@ segmentation.json
 
 ## 12. Versioning
 
-- Product version follows SemVer (`0.6.1`).
+- Product version follows SemVer (`0.7.0`).
 - Assembly/file versions mirror it.
 - Protocol has an independent `MAJOR.MINOR`.
 - Each Revit version gets its own build output folder
@@ -224,6 +224,9 @@ segmentation.json
 - `Import scan`, `Analyze scan` and `Generate BIM` are stage views inside that
   single window, selected from the sidebar or the ribbon. No separate process
   window is opened.
+- The `Knowledge library` stage is also inside the workspace. It searches the
+  local SQLite/FTS5 store, reviews records and invokes the read-only project
+  extractor. A separate `KnowledgeTranscriptWindow` collects source metadata.
 - Import sends the file to `pointcloud.import` and displays metadata.
 - Analysis calls `segmentation.run` and displays segments/confidence.
 - Generate previews the plan. **Create in Revit** runs `ModelBuilder.Create`
@@ -243,3 +246,33 @@ segmentation.json
 All engine failures are typed `RpcError` values with a machine code, a human
 message and, where possible, a `remedy`. The add-in must present the remedy and
 log the full error. Silent fallbacks are forbidden.
+
+## 15. Local knowledge engine
+
+```
+knowledge source (transcript / document / read-only RVT extraction)
+  → source hash + provenance
+  → SQLite documents/chunks + FTS5
+  → structured record (pending review)
+  → human review (approved / rejected / needs correction)
+  → knowledge.context (approved only, with citations)
+  → Astra plan context / decision log
+```
+
+- Runtime root: `%LOCALAPPDATA%\RevoAI\knowledge`, overridable with
+  `REVOAI_KNOWLEDGE_ROOT`.
+- `knowledge.db` uses WAL, foreign keys and FTS5. Each engine request opens a
+  short-lived connection; migrations are idempotent.
+- Imports are idempotent by content hash. Approved records are immutable and
+  never overwritten by later imports.
+- Raw sources create a `source_material` record with status `extracted`; they are
+  searchable but never used as guidance until manually approved.
+- The Revit extractor is read-only, runs through `RevitTaskRunner`, and never
+  saves or closes the document.
+- Astra retrieval adds only approved, citable context. The scan evidence remains
+  authoritative. Retrieval IDs and the plan summary are recorded in `decisions`.
+- Backups are checksummed ZIPs; exports are JSONL with full provenance.
+- No network access is required for storage, search, review, extraction, backup
+  or export. Video and documentation ingestion is manual and user-authorized.
+
+See `docs/knowledge-engine.md` for the schema and RPC surface.

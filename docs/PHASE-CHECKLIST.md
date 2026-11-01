@@ -119,6 +119,30 @@ report contains test evidence.
 - [ ] Manual reference-cloud test in Revit 2026
 - [ ] Manual reference-cloud test in Revit 2027
 
+## Phase 5.2 - Local BIM knowledge engine
+
+- [x] SQLite + FTS5 storage with schema version and idempotent migrations
+- [x] Source, document, chunk, record, provenance and review tables
+- [x] Transcript/document import with content-hash deduplication
+- [x] Structured technique records with procedure/API/constraints/limitations
+- [x] Status workflow and Revit/point-cloud verification flags
+- [x] Correction API for non-approved records and soft delete with audit history
+- [x] Approved-only knowledge context for Astra with citations
+- [x] Read-only Revit project extractor
+- [x] Workspace Knowledge stage and ribbon Knowledge panel
+- [x] Checksummed backup, verified restore and JSONL export
+- [x] Python tests for storage, review, retrieval, extraction and backup
+- [x] .NET contract and real-engine integration tests
+- [x] Revit 2026 and 2027 Release builds with zero warnings
+- [x] WPF probe constructs the Workspace and transcript window
+- [x] Revit 2027: Knowledge stage loads and queries the real local engine
+- [x] Revit 2027: Extract Project imports a real two-level project
+- [ ] Manual knowledge UI test in Revit 2026
+- [ ] Manual full UI review in Revit 2027 (import, review, backup, export)
+- [ ] Manual project extraction test on a verified residential model
+- [ ] Embeddings/vector search (deferred: Python 3.14 dependency gap)
+- [ ] Benchmark UI and a verified point-cloud/RVT pair
+
 ## Phases 6–10
 
 Not started. See `ROADMAP.md`.

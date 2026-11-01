@@ -84,6 +84,14 @@
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
+            <Style x:Key="StageKnowledgeButton" TargetType="Button" BasedOn="{StaticResource StageNavButton}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsKnowledgeStage}" Value="True">
+                        <Setter Property="Background" Value="{StaticResource BlueBrush}" />
+                        <Setter Property="Foreground" Value="White" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
             <Style x:Key="SidebarActionButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
                 <Setter Property="Padding" Value="10,7" />
                 <Setter Property="FontSize" Value="12" />
@@ -147,6 +155,10 @@
                             Style="{StaticResource StageAnalyzeButton}" />
                     <Button Content="3   Generate BIM" Command="{Binding ShowGenerateStageCommand}"
                             Style="{StaticResource StageGenerateButton}" />
+                    <Border Height="1" Background="#33FFFFFF" Margin="0,14,0,14" />
+                    <TextBlock Text="KNOWLEDGE" Foreground="#8A94A6" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <Button Content="Knowledge library" Command="{Binding ShowKnowledgeStageCommand}"
+                            Style="{StaticResource StageKnowledgeButton}" />
                     <Border Height="1" Background="#33FFFFFF" Margin="0,14,0,14" />
                     <TextBlock Text="ACCOUNT" Foreground="#8A94A6" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <Button Content="Subscription" Command="{Binding ShowSubscriptionStageCommand}"
@@ -749,6 +761,130 @@
                                     <TextBlock Text="{Binding Generate.StatusMessage}" Style="{StaticResource MutedText}"
                                                VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="520" />
                                 </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Knowledge stage -->
+                    <StackPanel Visibility="{Binding IsKnowledgeStage, Converter={StaticResource BoolToVisibility}}">
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Content="Backup" Command="{Binding Knowledge.BackupCommand}"
+                                                Style="{StaticResource GhostButton}" Margin="0,0,6,0" />
+                                        <Button Content="Export" Command="{Binding Knowledge.ExportCommand}"
+                                                Style="{StaticResource GhostButton}" Margin="0,0,6,0" />
+                                        <Button Content="Open folder" Command="{Binding Knowledge.OpenRootCommand}"
+                                                Style="{StaticResource GhostButton}" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="Local knowledge library" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="{Binding Knowledge.StatsText}" Style="{StaticResource MutedText}"
+                                                   Margin="0,4,0,0" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </DockPanel>
+                                <WrapPanel Margin="0,14,0,0">
+                                    <Button Content="Import document…" Command="{Binding Knowledge.ImportDocumentCommand}"
+                                            Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
+                                    <Button Content="Import transcript…" Command="{Binding Knowledge.ImportTranscriptCommand}"
+                                            Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
+                                    <Button Content="Extract active project" Command="{Binding Knowledge.ExtractProjectCommand}"
+                                            Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
+                                    <ComboBox Width="170" Margin="0,0,0,8"
+                                              ItemsSource="{Binding Knowledge.DocumentKindOptions}"
+                                              SelectedItem="{Binding Knowledge.DocumentKind}"
+                                              ToolTip="Source type used when importing a document" />
+                                </WrapPanel>
+                                <TextBlock Text="{Binding Knowledge.StatusMessage}" Style="{StaticResource MutedText}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding Knowledge.ErrorMessage}" Foreground="#B42318"
+                                           FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"
+                                           Visibility="{Binding Knowledge.HasError, Converter={StaticResource BoolToVisibility}}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="Search and review" Style="{StaticResource SectionTitle}" Margin="0,0,0,4" />
+                                <TextBlock Text="Only approved records are used as established guidance. Extracted sources and pending records stay visibly separate."
+                                           Style="{StaticResource MutedText}" Margin="0,0,0,14" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="180" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Margin="0,0,8,0"
+                                             Text="{Binding Knowledge.SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Search subjects, descriptions, transcripts and documents" />
+                                    <ComboBox Grid.Column="1" Margin="0,0,8,0"
+                                              ItemsSource="{Binding Knowledge.StatusOptions}"
+                                              SelectedItem="{Binding Knowledge.SelectedStatus}" />
+                                    <Button Grid.Column="2" Content="Search" Command="{Binding Knowledge.SearchCommand}"
+                                            Style="{StaticResource PrimaryButton}" />
+                                </Grid>
+
+                                <Grid Margin="0,16,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="430" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="6" Background="White">
+                                        <ListBox ItemsSource="{Binding Knowledge.Results}"
+                                                 SelectedItem="{Binding Knowledge.SelectedItem}"
+                                                 BorderThickness="0" Background="Transparent"
+                                                 MinHeight="360" MaxHeight="460">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="10,8">
+                                                        <DockPanel>
+                                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Status}"
+                                                                       Foreground="{StaticResource BlueBrush}" FontSize="10"
+                                                                       FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding KindLabel}" Foreground="#8A94A6"
+                                                                       FontSize="9" FontWeight="SemiBold" />
+                                                        </DockPanel>
+                                                        <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource TextBrush}"
+                                                                   TextWrapping="Wrap" Margin="0,3,0,0" />
+                                                        <TextBlock Text="{Binding Subtitle}" Style="{StaticResource MutedText}"
+                                                                   TextWrapping="Wrap" Margin="0,2,0,0" />
+                                                        <TextBlock Text="{Binding SourceLabel}" Style="{StaticResource MutedText}"
+                                                                   TextWrapping="Wrap" Margin="0,2,0,0" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Border>
+
+                                    <Border Grid.Column="1" Margin="16,0,0,0" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="6" Background="White" Padding="16">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="460">
+                                            <StackPanel>
+                                                <TextBlock Text="DETAILS" Style="{StaticResource FieldLabel}" />
+                                                <TextBlock Text="{Binding Knowledge.DetailsText}" TextWrapping="Wrap"
+                                                           Foreground="{StaticResource TextBrush}" FontSize="12" />
+                                                <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,14,0,12" />
+                                                <TextBlock Text="PROVENANCE AND REVIEW HISTORY" Style="{StaticResource FieldLabel}" />
+                                                <TextBlock Text="{Binding Knowledge.ProvenanceText}" TextWrapping="Wrap"
+                                                           Foreground="{StaticResource MutedBrush}" FontSize="11" />
+                                                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                                                    <Button Content="Approve" Command="{Binding Knowledge.ApproveCommand}"
+                                                            Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" />
+                                                    <Button Content="Needs correction" Command="{Binding Knowledge.NeedsCorrectionCommand}"
+                                                            Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                                                    <Button Content="Reject" Command="{Binding Knowledge.RejectCommand}"
+                                                            Style="{StaticResource SecondaryButton}" />
+                                                    <Button Content="Delete" Command="{Binding Knowledge.DeleteCommand}"
+                                                            Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
                             </StackPanel>
                         </Border>
                     </StackPanel>

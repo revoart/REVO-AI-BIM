@@ -20,6 +20,8 @@ from pydantic import ValidationError
 
 from . import __version__
 from .analysis import AnalysisError, load_segmentation, run_segmentation
+from .knowledge import KnowledgeError
+from .knowledge.rpc import handle as handle_knowledge
 from .pointcloud import PointCloudError, PointCloudStore, import_point_cloud
 from .reconstruction import PlanError, create_plan
 from .protocol import (
@@ -70,12 +72,14 @@ class EngineState:
         self.client_name: str | None = None
         self.client_version: str | None = None
         self.log_directory: str | None = None
+        self.knowledge_root: str | None = None
 
     def initialize(self, params: InitializeParams) -> InitializeResult:
         self.initialized = True
         self.client_name = params.client_name
         self.client_version = params.client_version
         self.log_directory = params.log_directory
+        self.knowledge_root = params.knowledge_root
 
         if params.log_directory:
             _configure_file_logging(params.log_directory)
@@ -194,6 +198,33 @@ def dispatch(state: EngineState, request: RpcRequest) -> RpcResponse | None:
             "The engine has not been initialized.",
             remedy="Call 'initialize' before any processing request.",
         )
+
+    if request.method.startswith("knowledge."):
+        try:
+            result = handle_knowledge(state, request)
+        except ValidationError as exc:
+            return error_response(
+                request.id,
+                ErrorCode.INVALID_PARAMS,
+                "Invalid knowledge parameters.",
+                data=str(exc),
+            )
+        except KnowledgeError as exc:
+            return error_response(
+                request.id,
+                exc.code,
+                exc.message,
+                data=exc.data,
+                remedy=exc.remedy,
+            )
+
+        if result is None:
+            return error_response(
+                request.id,
+                ErrorCode.METHOD_NOT_FOUND,
+                f"Unknown knowledge method '{request.method}'.",
+            )
+        return RpcResponse(id=request.id, result=result)
 
     if request.method == METHOD_POINTCLOUD_IMPORT:
         try:

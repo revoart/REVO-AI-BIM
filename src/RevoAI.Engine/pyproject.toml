@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "revoai-engine"
-version = "0.5.0"
+version = "0.6.0"
 description = "Revo AI BIM local processing engine (point clouds, AI, reconstruction)."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -24,4 +24,4 @@ dependencies = [
 revoai-engine = "revoai_engine.service:main"
 
 [tool.setuptools]
-packages = ["revoai_engine", "revoai_engine.pointcloud", "revoai_engine.analysis", "revoai_engine.reconstruction"]
+packages = ["revoai_engine", "revoai_engine.pointcloud", "revoai_engine.analysis", "revoai_engine.reconstruction", "revoai_engine.knowledge"]

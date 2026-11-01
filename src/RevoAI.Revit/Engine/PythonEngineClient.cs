@@ -23,15 +23,17 @@ public sealed class PythonEngineClient : IAsyncDisposable
     private readonly StringBuilder _stderr = new();
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly TimeSpan _requestTimeout;
+    private readonly string? _knowledgeRoot;
 
     private int _nextRequestId;
     private bool _disposed;
     private bool _disposeStarted;
 
-    private PythonEngineClient(Process process, TimeSpan requestTimeout)
+    private PythonEngineClient(Process process, TimeSpan requestTimeout, string? knowledgeRoot)
     {
         _process = process;
         _requestTimeout = requestTimeout;
+        _knowledgeRoot = knowledgeRoot;
         _stdin = process.StandardInput;
         _stdout = process.StandardOutput;
     }
@@ -72,7 +74,8 @@ public sealed class PythonEngineClient : IAsyncDisposable
 
         var client = new PythonEngineClient(
             process,
-            TimeSpan.FromSeconds(config.RequestTimeoutSeconds));
+            TimeSpan.FromSeconds(config.RequestTimeoutSeconds),
+            config.KnowledgeRoot);
 
         client.PumpStandardError();
 
@@ -177,6 +180,151 @@ public sealed class PythonEngineClient : IAsyncDisposable
             EngineMethods.ReconstructionPlan,
             parameters,
             timeout ?? TimeSpan.FromMinutes(5),
+            cancellationToken);
+
+    // ------------------------------------------------------------- knowledge
+
+    public Task<KnowledgeSourceListResult> ListKnowledgeSourcesAsync(
+        KnowledgeSourceListParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeSourceListResult>(
+            EngineMethods.KnowledgeSourceList,
+            parameters,
+            _requestTimeout,
+            cancellationToken);
+
+    public Task<KnowledgeImportResult> ImportKnowledgeTranscriptAsync(
+        KnowledgeTranscriptImportParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeImportResult>(
+            EngineMethods.KnowledgeTranscriptImport,
+            parameters,
+            TimeSpan.FromMinutes(2),
+            cancellationToken);
+
+    public Task<KnowledgeImportResult> ImportKnowledgeDocumentAsync(
+        KnowledgeDocumentImportParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeImportResult>(
+            EngineMethods.KnowledgeDocumentImport,
+            parameters,
+            TimeSpan.FromMinutes(2),
+            cancellationToken);
+
+    public Task<KnowledgeTechniqueAddResult> AddKnowledgeTechniqueAsync(
+        KnowledgeTechniqueAddParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeTechniqueAddResult>(
+            EngineMethods.KnowledgeTechniqueAdd,
+            parameters,
+            _requestTimeout,
+            cancellationToken);
+
+    public Task<KnowledgeSearchResult> SearchKnowledgeAsync(
+        KnowledgeSearchParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeSearchResult>(
+            EngineMethods.KnowledgeSearch,
+            parameters,
+            _requestTimeout,
+            cancellationToken);
+
+    public Task<KnowledgeGetResult> GetKnowledgeRecordAsync(
+        string recordId,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeGetResult>(
+            EngineMethods.KnowledgeGet,
+            new KnowledgeGetParams { RecordId = recordId },
+            _requestTimeout,
+            cancellationToken);
+
+    public Task<KnowledgeReviewResult> ReviewKnowledgeAsync(
+        KnowledgeReviewParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeReviewResult>(
+            EngineMethods.KnowledgeReview,
+            parameters,
+            _requestTimeout,
+            cancellationToken);
+
+    public Task<KnowledgeUpdateResult> UpdateKnowledgeRecordAsync(
+        KnowledgeUpdateParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeUpdateResult>(
+            EngineMethods.KnowledgeUpdate,
+            parameters,
+            _requestTimeout,
+            cancellationToken);
+
+    public Task<KnowledgeDeleteResult> DeleteKnowledgeRecordAsync(
+        KnowledgeDeleteParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeDeleteResult>(
+            EngineMethods.KnowledgeDelete,
+            parameters,
+            _requestTimeout,
+            cancellationToken);
+
+    public Task<KnowledgeStatsResult> GetKnowledgeStatsAsync(
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeStatsResult>(
+            EngineMethods.KnowledgeStats,
+            new { },
+            _requestTimeout,
+            cancellationToken);
+
+    public Task<KnowledgeContextResult> GetKnowledgeContextAsync(
+        KnowledgeContextParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeContextResult>(
+            EngineMethods.KnowledgeContext,
+            parameters,
+            _requestTimeout,
+            cancellationToken);
+
+    public Task<KnowledgeProjectImportResult> ImportKnowledgeProjectAsync(
+        KnowledgeProjectImportParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeProjectImportResult>(
+            EngineMethods.KnowledgeProjectImport,
+            parameters,
+            TimeSpan.FromMinutes(5),
+            cancellationToken);
+
+    public Task<KnowledgeBackupResult> BackupKnowledgeAsync(
+        KnowledgeBackupParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeBackupResult>(
+            EngineMethods.KnowledgeBackup,
+            parameters,
+            TimeSpan.FromMinutes(2),
+            cancellationToken);
+
+    public Task<KnowledgeExportResult> ExportKnowledgeAsync(
+        KnowledgeExportParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeExportResult>(
+            EngineMethods.KnowledgeExport,
+            parameters,
+            TimeSpan.FromMinutes(2),
+            cancellationToken);
+
+    public Task<KnowledgeDecisionAddResult> AddKnowledgeDecisionAsync(
+        KnowledgeDecisionAddParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeDecisionAddResult>(
+            EngineMethods.KnowledgeDecisionAdd,
+            parameters,
+            _requestTimeout,
+            cancellationToken);
+
+    public Task<KnowledgeBenchmarkAddResult> AddKnowledgeBenchmarkAsync(
+        KnowledgeBenchmarkAddParams parameters,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<KnowledgeBenchmarkAddResult>(
+            EngineMethods.KnowledgeBenchmarkAdd,
+            parameters,
+            _requestTimeout,
             cancellationToken);
 
     public async Task<ShutdownResult> ShutdownAsync(CancellationToken cancellationToken = default)
@@ -286,6 +434,7 @@ public sealed class PythonEngineClient : IAsyncDisposable
                 ClientVersion = BuildInfo.Version,
                 ProtocolVersion = ProtocolVersion.Current,
                 LogDirectory = RevoLog.Directory,
+                KnowledgeRoot = _knowledgeRoot,
             });
 
         var response = await SendAsync(request, timeout, cancellationToken);

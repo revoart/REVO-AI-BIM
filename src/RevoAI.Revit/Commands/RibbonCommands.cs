@@ -53,6 +53,28 @@ public sealed class GenerateBimCommand : RevoCommandBase
 
 [Transaction(TransactionMode.Manual)]
 [Regeneration(RegenerationOption.Manual)]
+public sealed class KnowledgeCommand : RevoCommandBase
+{
+    protected override Result ExecuteCore(ExternalCommandData commandData)
+    {
+        WorkspaceController.ShowKnowledge(commandData.Application);
+        return Result.Succeeded;
+    }
+}
+
+[Transaction(TransactionMode.Manual)]
+[Regeneration(RegenerationOption.Manual)]
+public sealed class ExtractKnowledgeCommand : RevoCommandBase
+{
+    protected override Result ExecuteCore(ExternalCommandData commandData)
+    {
+        WorkspaceController.ExtractProjectKnowledge(commandData.Application);
+        return Result.Succeeded;
+    }
+}
+
+[Transaction(TransactionMode.Manual)]
+[Regeneration(RegenerationOption.Manual)]
 public sealed class ModelReviewCommand : RevoCommandBase
 {
     protected override Result ExecuteCore(ExternalCommandData commandData) =>

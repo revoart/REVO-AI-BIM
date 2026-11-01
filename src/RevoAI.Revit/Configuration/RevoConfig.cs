@@ -13,6 +13,7 @@ public sealed class RevoConfig
     public const string PythonEnvironmentVariable = "REVOAI_PYTHON";
     public const string EngineRootEnvironmentVariable = "REVOAI_ENGINE_ROOT";
     public const string LogDirectoryEnvironmentVariable = "REVOAI_LOG_DIR";
+    public const string KnowledgeRootEnvironmentVariable = "REVOAI_KNOWLEDGE_ROOT";
 
     /// <summary>
     /// Python executable. Empty means "auto": use the repository virtual
@@ -27,6 +28,12 @@ public sealed class RevoConfig
     public string? EngineRoot { get; init; }
 
     public string? LogDirectory { get; init; }
+
+    /// <summary>
+    /// Local knowledge database root. Null uses the engine default
+    /// (<c>%LOCALAPPDATA%\RevoAI\knowledge</c>).
+    /// </summary>
+    public string? KnowledgeRoot { get; init; }
 
     public int StartupTimeoutSeconds { get; init; } = 60;
 
@@ -57,6 +64,9 @@ public sealed class RevoConfig
             LogDirectory = FirstNonEmpty(
                 environment.GetValueOrDefault(LogDirectoryEnvironmentVariable),
                 file.LogDirectory),
+            KnowledgeRoot = FirstNonEmpty(
+                environment.GetValueOrDefault(KnowledgeRootEnvironmentVariable),
+                file.KnowledgeRoot),
             StartupTimeoutSeconds = file.StartupTimeoutSeconds is > 0 and <= 600
                 ? file.StartupTimeoutSeconds.Value
                 : 60,
@@ -178,6 +188,7 @@ public sealed class RevoConfig
             [PythonEnvironmentVariable] = Environment.GetEnvironmentVariable(PythonEnvironmentVariable),
             [EngineRootEnvironmentVariable] = Environment.GetEnvironmentVariable(EngineRootEnvironmentVariable),
             [LogDirectoryEnvironmentVariable] = Environment.GetEnvironmentVariable(LogDirectoryEnvironmentVariable),
+            [KnowledgeRootEnvironmentVariable] = Environment.GetEnvironmentVariable(KnowledgeRootEnvironmentVariable),
         };
 
     private static string? FirstNonEmpty(params string?[] values) =>
@@ -192,6 +203,8 @@ public sealed class RevoConfig
         public string? EngineRoot { get; init; }
 
         public string? LogDirectory { get; init; }
+
+        public string? KnowledgeRoot { get; init; }
 
         public int? StartupTimeoutSeconds { get; init; }
 

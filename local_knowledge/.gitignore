@@ -1,0 +1,8 @@
+# Ignore every knowledge payload. Only curation metadata and folder markers are
+# committed. Runtime data lives in %LOCALAPPDATA%\RevoAI\knowledge.
+*
+!.gitignore
+!README.md
+!catalog.json
+!*/
+!**/.gitkeep

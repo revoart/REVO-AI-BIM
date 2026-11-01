@@ -45,6 +45,22 @@ public static class EngineMethods
     public const string SegmentationRun = "segmentation.run";
     public const string SegmentationInfo = "segmentation.info";
     public const string ReconstructionPlan = "reconstruction.plan";
+    public const string KnowledgeSourceList = "knowledge.source.list";
+    public const string KnowledgeTranscriptImport = "knowledge.transcript.import";
+    public const string KnowledgeDocumentImport = "knowledge.document.import";
+    public const string KnowledgeTechniqueAdd = "knowledge.technique.add";
+    public const string KnowledgeSearch = "knowledge.search";
+    public const string KnowledgeGet = "knowledge.get";
+    public const string KnowledgeReview = "knowledge.review";
+    public const string KnowledgeUpdate = "knowledge.update";
+    public const string KnowledgeDelete = "knowledge.delete";
+    public const string KnowledgeStats = "knowledge.stats";
+    public const string KnowledgeContext = "knowledge.context";
+    public const string KnowledgeProjectImport = "knowledge.project.import";
+    public const string KnowledgeBackup = "knowledge.backup";
+    public const string KnowledgeExport = "knowledge.export";
+    public const string KnowledgeDecisionAdd = "knowledge.decision.add";
+    public const string KnowledgeBenchmarkAdd = "knowledge.benchmark.add";
 }
 
 /// <summary>
@@ -75,6 +91,12 @@ public static class EngineErrorCodes
     public const int AiProviderFailed = -32028;
     public const int SubscriptionRequired = -32029;
     public const int SubscriptionQuotaExceeded = -32030;
+
+    public const int KnowledgeStoreFailed = -32040;
+    public const int KnowledgeNotFound = -32041;
+    public const int KnowledgeInvalid = -32042;
+    public const int KnowledgeConflict = -32043;
+    public const int KnowledgeIoFailed = -32044;
 }
 
 /// <summary>Base shape of a JSON-RPC 2.0 request.</summary>

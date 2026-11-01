@@ -8,6 +8,7 @@ It creates no Revit objects; the C# side owns the transaction.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 import uuid
@@ -21,6 +22,8 @@ from .. import __version__
 from ..analysis import load_segmentation
 from ..pointcloud import PointCloudStore
 from .errors import plan_failed, plan_invalid
+
+LOG = logging.getLogger("revoai.reconstruction")
 
 METHOD = "geometric-floor-wall-plan/1"
 EXTERNAL_METHOD = "external-bim-plan/1"
@@ -236,8 +239,14 @@ def _create_astra_plan(params, started: float) -> dict[str, Any]:
     store, segmentation, context, element_count = _build_astra_context(
         params.store_path
     )
+    knowledge = _build_knowledge_context(segmentation)
+    if knowledge is not None:
+        context["approvedKnowledge"] = {
+            "text": knowledge["text"],
+            "citations": knowledge["citations"],
+        }
     payload = request_astra_plan(context, model=params.astra_model)
-    return _normalize_external_plan(
+    result = _normalize_external_plan(
         payload,
         store,
         params,
@@ -247,6 +256,12 @@ def _create_astra_plan(params, started: float) -> dict[str, Any]:
             "astraModel": params.astra_model,
             "astraElementCount": element_count,
         },
+    )
+    return _attach_knowledge(
+        result,
+        knowledge,
+        model=params.astra_model,
+        provider="openai",
     )
 
 
@@ -258,8 +273,14 @@ def _create_astra_subscription_plan(params, started: float) -> dict[str, Any]:
     store, segmentation, context, element_count = _build_astra_context(
         params.store_path
     )
+    knowledge = _build_knowledge_context(segmentation)
+    if knowledge is not None:
+        context["approvedKnowledge"] = {
+            "text": knowledge["text"],
+            "citations": knowledge["citations"],
+        }
     payload = request_subscription_plan(context)
-    return _normalize_external_plan(
+    result = _normalize_external_plan(
         payload,
         store,
         params,
@@ -271,6 +292,69 @@ def _create_astra_subscription_plan(params, started: float) -> dict[str, Any]:
             "billing": "revo-subscription",
         },
     )
+    return _attach_knowledge(
+        result,
+        knowledge,
+        model=params.astra_model,
+        provider="revo-subscription",
+    )
+
+
+def _build_knowledge_context(segmentation: dict[str, Any]) -> dict[str, Any] | None:
+    """Retrieve approved local knowledge, but never block plan generation."""
+    try:
+        from ..knowledge import KnowledgeStore
+
+        kinds = sorted(
+            {
+                str(element.get("kind"))
+                for element in segmentation.get("elements", [])
+                if element.get("kind")
+            }
+        )
+        store = KnowledgeStore()
+        context = store.context(element_kinds=kinds, limit=6)
+        if not context.get("records"):
+            return None
+        context["store"] = store
+        return context
+    except Exception as exc:  # pragma: no cover - defensive local storage path
+        LOG.warning("Approved knowledge could not be retrieved: %s", exc)
+        return None
+
+
+def _attach_knowledge(
+    result: dict[str, Any],
+    knowledge: dict[str, Any] | None,
+    *,
+    model: str,
+    provider: str,
+) -> dict[str, Any]:
+    if knowledge is None:
+        return result
+
+    citations = knowledge.get("citations", [])
+    result.setdefault("parameters", {})["knowledgeCitations"] = citations
+    result["parameters"]["knowledgeRecordCount"] = len(knowledge.get("records", []))
+
+    try:
+        store = knowledge["store"]
+        store.add_decision(
+            task="reconstruction.plan",
+            model=model,
+            retrieved_ids=[item["recordId"] for item in citations],
+            plan={
+                "levels": len(result.get("levels", [])),
+                "floors": len(result.get("floors", [])),
+                "walls": len(result.get("walls", [])),
+                "provider": provider,
+            },
+            outcome="generated",
+        )
+    except Exception as exc:  # pragma: no cover - decision logging is best effort
+        LOG.warning("Could not record the knowledge retrieval decision: %s", exc)
+
+    return result
 
 
 def _build_astra_context(

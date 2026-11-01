@@ -3,6 +3,60 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.7.0] - 2026-11-01 - Local BIM knowledge engine
+
+### Added
+
+- Persistent local knowledge library under `%LOCALAPPDATA%\RevoAI\knowledge`
+  with an override through `REVOAI_KNOWLEDGE_ROOT`.
+- SQLite schema with FTS5: sources, documents, chunks, knowledge records,
+  provenance, reviews, project extractions, project elements, decisions and
+  benchmarks.
+- Transcript and document import with creator, URL, licence, content hashing and
+  duplicate-safe imports.
+- Structured technique records with procedures, API operations, conditions,
+  constraints, limitations, confidence, tags and source links.
+- Review statuses (`extracted`, `pending_review`, `approved`, `rejected`,
+  `needs_correction`) plus `verified_revit` and `verified_pointcloud` flags.
+- Correction API for non-approved records and soft delete with retained review
+  history.
+- Approved-only retrieval context for Astra, with citations and a decision log.
+- Read-only Revit project extractor for levels, walls, floors, ceilings, roofs,
+  doors, windows, stairs, railings, columns, rooms, levels and grids.
+- **Knowledge library** workspace stage and **Knowledge** ribbon panel.
+- Transcript import window with source metadata.
+- Checksummed ZIP backup, verified restore and provenance-preserving JSONL export.
+- `local_knowledge/` seed catalog and a documented source policy.
+- Python tests for persistence, search, review, retrieval, extraction, backup,
+  restore and export; .NET contract and real-engine integration tests.
+
+### Changed
+
+- Engine version is `0.6.0`; add-in/product version is `0.7.0`.
+- Engine capabilities now include the `knowledge.*` RPC surface.
+- The initialization handshake accepts an optional `knowledgeRoot`.
+- Astra planning includes approved knowledge context when available. Scan
+  evidence remains authoritative.
+
+### Verified
+
+- 74 Python tests pass.
+- 37 .NET tests pass, including the real engine knowledge integration test.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the Workspace, Settings, About and transcript windows.
+- Revit 2027 smoke check: the 0.7.0 add-in loaded, the Knowledge stage opened and
+  queried the real local engine, and **Extract Project** imported a real
+  two-level Revit project (2 levels, units, parameters and warnings).
+
+### Known gaps
+
+- Embeddings/vector search is deferred because the Python 3.14 environment has no
+  verified local embedding stack.
+- Automatic YouTube downloading, PDF parsing, benchmark UI and live Astra remain
+  unimplemented or blocked.
+- Manual in-Revit checks for the knowledge stage and project extractor are still
+  pending.
+
 ## [0.6.1] - 2026-11-01 - Point-cloud reference in the model
 
 ### Added

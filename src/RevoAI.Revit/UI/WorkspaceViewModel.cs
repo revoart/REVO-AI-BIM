@@ -18,6 +18,7 @@ public enum WorkspaceStage
     Import,
     Analyze,
     Generate,
+    Knowledge,
     Subscription,
 }
 
@@ -89,6 +90,7 @@ public sealed class WorkspaceViewModel : ObservableObject
             string.Empty,
             _confidenceThreshold,
             _markInferredGeometry);
+        Knowledge = new KnowledgeViewModel(_runner, revitWindowHandle);
         Import.ImportCompleted += ApplyImportResult;
         Analysis.AnalysisCompleted += ApplyAnalysisResult;
         Generate.BuildCompleted += ApplyBuildResult;
@@ -99,6 +101,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         ShowImportStageCommand = new RelayCommand(ShowImportStage);
         ShowAnalysisStageCommand = new RelayCommand(ShowAnalysisStage);
         ShowGenerateStageCommand = new RelayCommand(ShowGenerateStage);
+        ShowKnowledgeStageCommand = new RelayCommand(ShowKnowledgeStage);
         ShowSubscriptionStageCommand = new RelayCommand(ShowSubscriptionStage);
         TestEngineCommand = new AsyncRelayCommand(TestEngineAsync);
         ToggleReferenceCloudCommand = new AsyncRelayCommand(
@@ -125,6 +128,8 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public ReconstructionViewModel Generate { get; }
 
+    public KnowledgeViewModel Knowledge { get; }
+
     public SubscriptionViewModel Subscription { get; }
 
     public ICommand RefreshCommand { get; }
@@ -139,6 +144,8 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public ICommand ShowGenerateStageCommand { get; }
 
+    public ICommand ShowKnowledgeStageCommand { get; }
+
     public ICommand ShowSubscriptionStageCommand { get; }
 
     public bool IsProjectStage => _stage == WorkspaceStage.Project;
@@ -149,6 +156,8 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public bool IsGenerateStage => _stage == WorkspaceStage.Generate;
 
+    public bool IsKnowledgeStage => _stage == WorkspaceStage.Knowledge;
+
     public bool IsSubscriptionStage => _stage == WorkspaceStage.Subscription;
 
     public string StageTitle => _stage switch
@@ -156,6 +165,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         WorkspaceStage.Import => "Import scan",
         WorkspaceStage.Analyze => "Analyze scan",
         WorkspaceStage.Generate => "Generate BIM",
+        WorkspaceStage.Knowledge => "Knowledge library",
         WorkspaceStage.Subscription => "Subscription",
         _ => "Project setup",
     };
@@ -165,6 +175,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         WorkspaceStage.Import => "Bring a supported scan into a local chunked store.",
         WorkspaceStage.Analyze => "Detect planar floors, ceilings and walls with confidence.",
         WorkspaceStage.Generate => "Preview the plan, then create native Revit floors and walls.",
+        WorkspaceStage.Knowledge => "Search, review and extract local BIM knowledge with full provenance.",
         WorkspaceStage.Subscription => "Choose the Revo AI BIM plan that fits your work.",
         _ => "Inspect the project, levels, engine and workspace settings.",
     };
@@ -486,6 +497,12 @@ public sealed class WorkspaceViewModel : ObservableObject
         }
     }
 
+    public void ShowKnowledgeStage()
+    {
+        SetStage(WorkspaceStage.Knowledge);
+        _ = Knowledge.LoadAsync();
+    }
+
     public void ShowSubscriptionStage() => SetStage(WorkspaceStage.Subscription);
 
     private void SetStage(WorkspaceStage stage)
@@ -500,6 +517,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         OnPropertyChanged(nameof(IsImportStage));
         OnPropertyChanged(nameof(IsAnalyzeStage));
         OnPropertyChanged(nameof(IsGenerateStage));
+        OnPropertyChanged(nameof(IsKnowledgeStage));
         OnPropertyChanged(nameof(IsSubscriptionStage));
         OnPropertyChanged(nameof(StageTitle));
         OnPropertyChanged(nameof(StageSubtitle));

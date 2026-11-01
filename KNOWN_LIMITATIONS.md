@@ -113,6 +113,28 @@ This file is deliberately blunt. Anything listed here is **not working** or
 25. **Subscription checkout is not connected.** The Subscription page displays
     pricing and lets the user select a plan, but no payment, entitlement or
     quota service exists yet; selecting a plan does not charge the customer.
+26. **Knowledge search is full-text only.** The SQLite/FTS5 index works, but no
+    embedding model or vector index is installed. Python 3.14 has no verified
+    local embedding stack in this environment, so semantic search is deferred.
+27. **No automatic YouTube ingestion.** Transcripts and screenshots must be
+    supplied by the user from content they are authorized to use. No DRM,
+    login or access restriction is bypassed.
+28. **No PDF parsing.** Knowledge documents must be `.txt`, `.md`, `.html`,
+    `.htm`, `.json`, `.csv`, `.xml` or `.log`; save PDFs as text first.
+29. **Project extraction is structural, not semantic.** It captures elements,
+    types, parameters, levels, hosts, rooms and bounding boxes. It does not
+    infer construction intent, verify design correctness or measure accuracy.
+    Room association is captured for `FamilyInstance` elements only.
+30. **Approved knowledge cannot be edited in place.** This is intentional. The
+    update RPC accepts only non-approved records; corrections to approved
+    knowledge need a future revision workflow. The review UI currently exposes
+    delete and review actions, not an edit form.
+31. **Knowledge retrieval for Astra is not live-tested.** The context builder is
+    tested with fakes; a real Astra call still needs credentials or the
+    subscription gateway.
+32. **The knowledge UI and project extractor need manual in-Revit checks.**
+    Automated tests cover storage, RPC and contract behavior, not the WPF/Revit
+    interaction.
 
 ## Honesty rules for future phases
 

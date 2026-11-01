@@ -31,6 +31,9 @@ Rules:
 - Walls must be centrelines with a start, end and height.
 - Confidence is a 0-1 fit/evidence score, not a claim of measured accuracy.
 - Do not include doors, windows, ceilings, furniture or stairs in this version.
+- Approved local knowledge may be supplied in `approvedKnowledge`. You may use
+  it to guide procedure, but the scan evidence always wins. Do not invent facts
+  that are not present in the evidence or the approved knowledge.
 """
 
 _SCHEMA: dict[str, Any] = {

@@ -6,17 +6,20 @@ Revo AI BIM converts laser-scanned buildings into editable, native Revit
 elements. The product is built in ten gated phases; each phase is implemented,
 tested and reviewed before the next begins.
 
-> **Current status: Phase 5 - implemented. E57, LAS, LAZ, PLY and XYZ/TXT scans
-> can be imported, analysed into floor/ceiling/wall instances, and converted
-> into a previewable plan for native Revit floors and walls. Import, analysis
-> and generation are stages in one Workspace window. A real 27.8-million-point
-> E57 import is verified in Revit 2027; native geometry creation and the Scan
-> Analysis UI still need manual in-Revit verification.**
+> **Current status: Phase 5 plus the local knowledge engine. E57, LAS, LAZ, PLY
+> and XYZ/TXT scans can be imported, analysed into floor/ceiling/wall instances,
+> and converted into a previewable plan for native Revit floors and walls.
+> Import, analysis, generation, subscription and knowledge are stages in one
+> Workspace window. A real 27.8-million-point E57 import is verified in Revit
+> 2027; native geometry creation and the Scan Analysis UI still need manual
+> in-Revit verification.**
 >
 > This is not a trained neural network. Revit shows a sampled **point-cloud
 > reference** made of model markers, not a native RCP/RCS scan; it is a visual
 > aid, not measured point data. Generated floors and walls are inferred from a
-> deterministic geometric baseline, not measured accuracy.
+> deterministic geometric baseline, not measured accuracy. The knowledge library
+> is local SQLite/FTS5 with human review; approved knowledge can guide Astra,
+> but scan evidence remains authoritative.
 
 ## What exists today
 
@@ -24,7 +27,7 @@ tested and reviewed before the next begins.
 | --- | --- |
 | Repository, build system, versioning | Done |
 | Revit 2026 / 2027 add-in builds (.NET 10) | Done, builds verified |
-| REVO AI BIM ribbon tab with 8 controls | Done, builds; in-Revit check pending |
+| REVO AI BIM ribbon tab with 10 controls | Done, builds; in-Revit check pending |
 | Modeless WPF workspace | Done, XAML construction verified |
 | Settings window writing real config | Done, tested |
 | Native Revit level creation (transaction + ExternalEvent) | Done, builds; in-Revit check pending |
@@ -40,6 +43,9 @@ tested and reviewed before the next begins.
 | Reconstruction plan with levels, floor polygons and wall lines | Done, tested |
 | Native Revit floor and wall creation with inferred-element marking | Implemented; manual in-Revit check pending |
 | Model-visible sampled point-cloud reference with sidebar show/hide control | Implemented; manual in-Revit check pending |
+| Local knowledge library (SQLite + FTS5, provenance, review, backup/export) | Done, tested |
+| Read-only Revit project extraction into the knowledge library | Implemented; manual in-Revit check pending |
+| Approved-knowledge retrieval for Astra planning | Implemented; tested with fakes; live Astra blocked without credentials |
 | Unit conversion kernel (metres ↔ feet ↔ mm/in/US survey feet) | Done, tested |
 | Structured logging, configuration, error model | Done |
 | Trained ML, doors/windows, native RCP/RCS point-cloud import | **Not started** |
@@ -53,6 +59,7 @@ revo-ai-bim/
 │  ├─ RevoAI.Revit/         Revit add-in (net10.0-windows, WPF enabled)
 │  ├─ RevoAI.Engine/        Python engine package (revoai_engine)
 │  └─ RevoAI.Geometry/      Python geometry package (revoai_geometry)
+├─ local_knowledge/         Seed catalog; runtime data lives in %LOCALAPPDATA%
 ├─ tests/
 │  ├─ RevoAI.Revit.Tests/   xUnit: protocol, config, real engine process, analysis and reconstruction client
 │  ├─ RevoAI.Engine.Tests/  pytest: protocol, point cloud, segmentation, reconstruction plan

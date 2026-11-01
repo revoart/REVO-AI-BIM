@@ -33,6 +33,7 @@ public static class RevoConfigWriter
             pythonArguments = config.PythonArguments is { Length: > 0 } ? config.PythonArguments : null,
             engineRoot = config.EngineRoot,
             logDirectory = config.LogDirectory,
+            knowledgeRoot = config.KnowledgeRoot,
             startupTimeoutSeconds = config.StartupTimeoutSeconds,
             requestTimeoutSeconds = config.RequestTimeoutSeconds,
         };

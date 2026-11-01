@@ -61,6 +61,22 @@ def test_initialize_returns_honest_capabilities() -> None:
         "segmentation.run",
         "segmentation.info",
         "reconstruction.plan",
+        "knowledge.source.list",
+        "knowledge.transcript.import",
+        "knowledge.document.import",
+        "knowledge.technique.add",
+        "knowledge.search",
+        "knowledge.get",
+        "knowledge.review",
+        "knowledge.update",
+        "knowledge.delete",
+        "knowledge.stats",
+        "knowledge.context",
+        "knowledge.project.import",
+        "knowledge.backup",
+        "knowledge.export",
+        "knowledge.decision.add",
+        "knowledge.benchmark.add",
     ]
 
 

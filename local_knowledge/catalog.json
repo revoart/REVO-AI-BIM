@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "1.0",
+  "description": "Initial Revo AI BIM reference collection. Items are planned, not imported. Importing a source requires the user to supply the text/file and confirm the licence.",
+  "sources": [
+    {
+      "id": "yt-residential-noble",
+      "kind": "youtube",
+      "title": "How to Design a Residential Building in Revit",
+      "creator": "Noble Architects Consults",
+      "topic": "Complete residential workflow",
+      "status": "planned",
+      "notes": "Levels, walls, doors, windows, floors, ceilings, stairs and roofs."
+    },
+    {
+      "id": "yt-autodesk-tutorials",
+      "kind": "youtube",
+      "title": "Autodesk Revit modelling tutorial series",
+      "creator": "Autodesk",
+      "topic": "Official learning resources",
+      "status": "planned",
+      "notes": "Separate lessons for levels, walls, floors, roofs, doors, windows, stairs and views."
+    },
+    {
+      "id": "yt-scan-bim-setup",
+      "kind": "youtube",
+      "title": "Point Cloud to BIM in Revit — Project Setup",
+      "creator": "BIM Shikshha",
+      "topic": "Scan-to-BIM project setup",
+      "status": "planned",
+      "notes": "Point cloud import, project setup, coordinate handling."
+    },
+    {
+      "id": "yt-scan-bim-workflow",
+      "kind": "youtube",
+      "title": "Scan to BIM Tutorial — Point Cloud to Revit Workflow",
+      "creator": "BIM For Construction",
+      "topic": "Registration, Recap, E57, RCS/RCP and modelling",
+      "status": "planned"
+    },
+    {
+      "id": "yt-scan-bim-breakdown",
+      "kind": "youtube",
+      "title": "Scan to BIM in Revit — Full Breakdown",
+      "creator": "Balkan Architect",
+      "topic": "Scan accuracy, as-built modelling and conversion challenges",
+      "status": "planned"
+    },
+    {
+      "id": "autodesk-api-portal",
+      "kind": "autodesk_docs",
+      "title": "Autodesk Revit API Developer Resources",
+      "url": "https://www.autodesk.com/developer-network/platform-technologies/revit",
+      "topic": "Official API SDK, samples, tutorials and tools",
+      "status": "planned"
+    },
+    {
+      "id": "autodesk-api-guide",
+      "kind": "autodesk_docs",
+      "title": "Revit API Developer Guide",
+      "topic": "Core API concepts, elements, geometry, parameters, transactions, ExternalEvent",
+      "status": "planned",
+      "notes": "Index the version that matches the installed Revit 2026/2027 SDK."
+    },
+    {
+      "id": "autodesk-sample-projects",
+      "kind": "autodesk_docs",
+      "title": "Autodesk Revit sample project files",
+      "topic": "rac_basic_sample_project.rvt, rac_advanced_sample_project.rvt, DACH_sample_project.rvt",
+      "status": "planned",
+      "notes": "Download from Autodesk and record the licence before extraction."
+    },
+    {
+      "id": "revit-2025-rural-house",
+      "kind": "revit_project",
+      "title": "Revit 2025 rural house example",
+      "topic": "Residential project with drawings, schedules and stages",
+      "status": "planned",
+      "notes": "Confirm the creator's licence before commercial use."
+    },
+    {
+      "id": "revo-verified-pair",
+      "kind": "pointcloud_pair",
+      "title": "Revo verified residential scan + RVT pair",
+      "topic": "Benchmark dataset",
+      "status": "missing",
+      "notes": "Highest priority. Required before any dimensional accuracy claim."
+    }
+  ],
+  "initialChecklist": [
+    "Add 5-10 residential Revit modelling sources",
+    "Add 3-5 scan-to-BIM sources",
+    "Index the Autodesk API Developer Guide for 2026 and 2027",
+    "Download the matching Revit SDK",
+    "Extract Autodesk architectural sample projects",
+    "Add one residential RVT project with a recorded licence",
+    "Add one point cloud paired with a verified RVT model",
+    "Review and approve the first techniques"
+  ]
+}

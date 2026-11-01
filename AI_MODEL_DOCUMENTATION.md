@@ -44,3 +44,17 @@ Any claim of AI capability before Phase 4 would be false.
 
 The only Python "intelligence" present is deterministic unit conversion. That is
 intentional: the pipeline must be trustworthy before intelligence is added.
+
+## Knowledge retrieval (Phase 5.2)
+
+The local knowledge engine is **not a trained model**. It is a provenance-aware
+retrieval layer:
+
+- SQLite + FTS5 over manually imported transcripts, documents and read-only
+  Revit project extractions.
+- Human review controls which records become approved guidance.
+- `knowledge.context` returns only approved records with citations.
+- Astra may receive the approved context, but the scan evidence remains
+  authoritative and the plan is still validated geometrically.
+- No embedding model, vector index or learned weights are present. The
+  `embeddings` table is reserved for a future verified local model.

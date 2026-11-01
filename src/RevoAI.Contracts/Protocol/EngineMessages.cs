@@ -12,6 +12,11 @@ public sealed class InitializeParams
 
     /// <summary>Optional directory where the engine should write its log file.</summary>
     public string? LogDirectory { get; init; }
+
+    /// <summary>
+    /// Optional local knowledge root. Null lets the engine use its own default.
+    /// </summary>
+    public string? KnowledgeRoot { get; init; }
 }
 
 /// <summary>Result of a successful <c>initialize</c> handshake.</summary>
