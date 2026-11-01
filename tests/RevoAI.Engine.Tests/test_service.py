@@ -60,6 +60,7 @@ def test_initialize_returns_honest_capabilities() -> None:
         "pointcloud.query",
         "segmentation.run",
         "segmentation.info",
+        "reconstruction.plan",
     ]
 
 

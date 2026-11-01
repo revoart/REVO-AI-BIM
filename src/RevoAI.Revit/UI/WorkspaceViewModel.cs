@@ -49,8 +49,10 @@ public sealed class WorkspaceViewModel : ObservableObject
     private bool _initialized;
     private bool _importDialogOpen;
     private bool _analysisDialogOpen;
+    private bool _reconstructionDialogOpen;
     private ImportScanWindow? _importWindow;
     private ScanAnalysisWindow? _analysisWindow;
+    private ReconstructionWindow? _reconstructionWindow;
     private double _progressValue;
     private int _detectedElements;
     private string _confidenceText = "—";
@@ -325,6 +327,9 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     /// <summary>Runs Scan Analysis for the imported scan, if one is loaded.</summary>
     public void BeginAnalysis() => _ = BeginAnalysisAsync();
+
+    /// <summary>Opens the native floor/wall generation dialog for the imported scan.</summary>
+    public void BeginGenerateBim() => _ = BeginGenerateBimAsync();
 
     private async Task RefreshAsync()
     {
@@ -607,6 +612,76 @@ public sealed class WorkspaceViewModel : ObservableObject
         }
 
         return Task.CompletedTask;
+    }
+
+    private Task BeginGenerateBimAsync()
+    {
+        if (_reconstructionDialogOpen)
+        {
+            _reconstructionWindow?.Activate();
+            return Task.CompletedTask;
+        }
+
+        if (string.IsNullOrWhiteSpace(ScanStorePath) ||
+            ScanStorePath == "—" ||
+            !Directory.Exists(ScanStorePath))
+        {
+            const string message = "Import a scan before generating BIM.";
+            Errors.Add(message);
+            StatusMessage = message;
+            return Task.CompletedTask;
+        }
+
+        _reconstructionDialogOpen = true;
+        try
+        {
+            var window = new ReconstructionWindow(
+                _runner,
+                ScanStorePath,
+                ConfidenceThreshold,
+                MarkInferredGeometry);
+            window.ViewModel.BuildCompleted += ApplyBuildResult;
+            window.Closed += (_, _) =>
+            {
+                _reconstructionWindow = null;
+                _reconstructionDialogOpen = false;
+            };
+
+            var owner = WorkspaceController.CurrentWindow;
+            if (owner is { IsLoaded: true })
+            {
+                window.Owner = owner;
+            }
+            else if (_revitWindowHandle != IntPtr.Zero)
+            {
+                new System.Windows.Interop.WindowInteropHelper(window) { Owner = _revitWindowHandle };
+            }
+
+            _reconstructionWindow = window;
+            window.Show();
+            window.WindowState = WindowState.Normal;
+            window.Activate();
+        }
+        catch (Exception ex)
+        {
+            _reconstructionDialogOpen = false;
+            _reconstructionWindow = null;
+            AddError("Could not open the Generate BIM dialog.", ex);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void ApplyBuildResult(ReconstructionBuildResult result)
+    {
+        ProgressValue = 100;
+        DetectedElements = result.CreatedFloors.Count + result.CreatedWalls.Count;
+        StatusMessage = result.Message;
+        RevoLog.Info(result.Message);
+        foreach (var warning in result.Warnings)
+        {
+            RevoLog.Warn(warning);
+        }
     }
 
     private void ApplyAnalysisResult(SegmentationResult result)

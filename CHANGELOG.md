@@ -3,6 +3,49 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.5.0] - 2026-11-01 - Phase 5: native walls and floors
+
+### Added
+
+- Ordered plane boundaries on segmentation instances, used for reconstruction.
+- `reconstruction.plan` JSON-RPC method and typed plan DTOs.
+- Reconstruction plan with level clustering, closed floor polygons, wall lines,
+  base levels, wall heights and confidence filtering.
+- Plan file written to `<scan store>/analysis/reconstruction-plan.json`.
+- **Generate BIM** dialog with preview of levels, floors, walls, heights and
+  warnings; nothing is created before confirmation.
+- Native `Floor.Create` and `Wall.Create` calls in one transaction.
+- Existing level reuse by elevation and creation of missing levels.
+- `REVO-INFERRED` marks/comments on created floors and walls.
+- Transaction rollback on failure.
+- Python plan tests, C# contract tests and real engine plan integration test.
+
+### Changed
+
+- Product and engine version 0.5.0.
+- Ribbon **Generate BIM** now opens the real plan/generation dialog.
+- Workspace phase badge and footer reflect Phase 5.
+- Documentation updated for the first commercial milestone.
+
+### Verified
+
+- 59 Python tests and 32 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the workspace, import, analysis, Generate BIM and settings
+  windows.
+- Real engine plan integration test passes.
+- Synthetic room produces one level, one floor and four walls.
+
+### Known gaps
+
+- Native floor/wall creation still needs a manual in-Revit check.
+- Uses default floor/wall types; requested wall thickness is not applied.
+- Floor boundaries are convex hulls, so L-shaped or concave rooms are
+  oversimplified.
+- Ceilings, doors, windows, furniture, stairs and curved surfaces are not
+  created.
+- No dimensional accuracy claim.
+
 ## [0.4.1] - 2026-11-01 - Import Scan crash hotfix
 
 ### Fixed

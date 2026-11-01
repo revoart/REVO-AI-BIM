@@ -21,6 +21,7 @@ from pydantic import ValidationError
 from . import __version__
 from .analysis import AnalysisError, load_segmentation, run_segmentation
 from .pointcloud import PointCloudError, PointCloudStore, import_point_cloud
+from .reconstruction import PlanError, create_plan
 from .protocol import (
     CAPABILITIES,
     METHOD_INITIALIZE,
@@ -28,6 +29,7 @@ from .protocol import (
     METHOD_POINTCLOUD_IMPORT,
     METHOD_POINTCLOUD_INFO,
     METHOD_POINTCLOUD_QUERY,
+    METHOD_RECONSTRUCTION_PLAN,
     METHOD_SEGMENTATION_INFO,
     METHOD_SEGMENTATION_RUN,
     METHOD_SHUTDOWN,
@@ -43,6 +45,8 @@ from .protocol import (
     PointCloudInfoResult,
     PointCloudQueryParams,
     PointCloudQueryResult,
+    ReconstructionPlanParams,
+    ReconstructionPlanResult,
     RpcRequest,
     RpcResponse,
     SegmentationInfoParams,
@@ -396,6 +400,41 @@ def dispatch(state: EngineState, request: RpcRequest) -> RpcResponse | None:
             )
 
         validated = SegmentationResult.model_validate(result)
+        return RpcResponse(
+            id=request.id,
+            result=validated.model_dump(by_alias=True),
+        )
+
+    if request.method == METHOD_RECONSTRUCTION_PLAN:
+        try:
+            params = ReconstructionPlanParams.model_validate(request.params or {})
+        except ValidationError as exc:
+            return error_response(
+                request.id,
+                ErrorCode.INVALID_PARAMS,
+                "Invalid reconstruction plan parameters.",
+                data=str(exc),
+            )
+
+        try:
+            result = create_plan(params)
+        except (PointCloudError, AnalysisError, PlanError) as exc:
+            return error_response(
+                request.id,
+                exc.code,
+                exc.message,
+                data=exc.data,
+                remedy=exc.remedy,
+            )
+
+        LOG.info(
+            "Reconstruction plan for %s: %s level(s), %s floor(s), %s wall(s)",
+            result["scanId"],
+            len(result["levels"]),
+            len(result["floors"]),
+            len(result["walls"]),
+        )
+        validated = ReconstructionPlanResult.model_validate(result)
         return RpcResponse(
             id=request.id,
             result=validated.model_dump(by_alias=True),

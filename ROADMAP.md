@@ -9,7 +9,7 @@ phase starts. No phase is marked complete without test evidence.
 | 2 | Revit ribbon + WPF workspace + `ExternalEvent` plumbing | **Implemented - Revit 2027 workspace verified; level creation/2026 pending** |
 | 3 | Point cloud engine: E57/XYZ/PLY/LAS/LAZ, preprocessing, chunking, indexing | **Implemented - Revit 2027 real E57 import verified; 2026 pending** |
 | 4 | AI building intelligence: semantic/instance segmentation, confidence | **Implemented - manual in-Revit check pending** |
-| 5 | Native walls and floors: first commercial milestone | Not started |
+| 5 | Native walls and floors: first commercial milestone | **Implemented - manual in-Revit check pending** |
 | 6 | Doors and windows: openings, hosted families | Not started |
 | 7 | Ceilings, roofs, stairs, railings, columns, beams, rooms | Not started |
 | 8 | QA engine: deviation analysis, coverage, confidence reporting | Not started |
@@ -70,6 +70,24 @@ phase starts. No phase is marked complete without test evidence.
 
 This baseline is deterministic geometry, not a trained neural network and not a
 dimensional-accuracy claim. Trained models and BIM geometry remain later work.
+
+## Phase 5 deliverables (implemented)
+
+- Segmentation instances now include an ordered plane boundary for reconstruction.
+- `reconstruction.plan` turns confidence-filtered floors and walls into a plan
+  with levels, closed floor polygons, wall lines, base levels and heights.
+- Plan preview dialog with floor/wall counts, confidence, warnings and no Revit
+  mutation.
+- Native `Floor.Create` and `Wall.Create` in one Revit transaction.
+- Existing levels are reused by elevation; missing levels are created.
+- Created elements carry `REVO-INFERRED` marks and comments with source segment
+  and confidence.
+- Transaction rollback on failure; no placeholder geometry.
+- Python plan tests, C# contract tests and real engine plan integration tests.
+
+This milestone uses default Revit floor/wall types and convex-hull floor
+boundaries. Doors, windows, ceilings, wall thickness control and accuracy
+measurement remain later work.
 
 ## Product milestone definition
 

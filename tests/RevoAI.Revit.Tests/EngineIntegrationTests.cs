@@ -205,6 +205,7 @@ public sealed class EngineIntegrationTests
             await using var client = await PythonEngineClient.StartAsync(config);
             Assert.Contains(EngineMethods.SegmentationRun, client.Handshake!.Capabilities);
             Assert.Contains(EngineMethods.SegmentationInfo, client.Handshake.Capabilities);
+            Assert.Contains(EngineMethods.ReconstructionPlan, client.Handshake.Capabilities);
 
             var imported = await client.ImportPointCloudAsync(new PointCloudImportParams
             {
@@ -241,6 +242,17 @@ public sealed class EngineIntegrationTests
             var info = await client.GetSegmentationInfoAsync(imported.StorePath);
             Assert.Equal(analysis.Summary.Segments, info.Summary.Segments);
             Assert.Equal(analysis.ResultPath, info.ResultPath);
+
+            var plan = await client.CreateReconstructionPlanAsync(new ReconstructionPlanParams
+            {
+                StorePath = imported.StorePath,
+                ConfidenceThreshold = 0.5,
+                MaxElements = 20,
+            });
+            Assert.Single(plan.Levels);
+            Assert.Single(plan.Floors);
+            Assert.Equal(4, plan.Walls.Count);
+            Assert.True(File.Exists(plan.ResultPath));
         }
         finally
         {

@@ -33,7 +33,7 @@
                     <Border Height="1" Background="#33FFFFFF" Margin="0,18,0,18" />
                     <TextBlock Text="SCAN TO BIM" Foreground="#8A94A6" FontSize="11" FontWeight="SemiBold" />
                     <Border Background="#22FFFFFF" CornerRadius="4" Padding="8,4" Margin="0,10,0,0" HorizontalAlignment="Left">
-                        <TextBlock Text="PHASE 4 · SCAN ANALYSIS" Foreground="#C9D1DE" FontSize="10" FontWeight="SemiBold" />
+                        <TextBlock Text="PHASE 5 · GENERATE BIM" Foreground="#C9D1DE" FontSize="10" FontWeight="SemiBold" />
                     </Border>
                 </StackPanel>
 
@@ -347,7 +347,7 @@
                     BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
                     Padding="28,10">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Right" Text="Phase 4 · geometric scan analysis (no model geometry)"
+                    <TextBlock DockPanel.Dock="Right" Text="Phase 5 · native floors and walls from the analysis plan"
                                Foreground="{StaticResource MutedBrush}" FontSize="11" />
                     <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource MutedBrush}"
                                FontSize="11" TextTrimming="CharacterEllipsis" />

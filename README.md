@@ -6,16 +6,15 @@ Revo AI BIM converts laser-scanned buildings into editable, native Revit
 elements. The product is built in ten gated phases; each phase is implemented,
 tested and reviewed before the next begins.
 
-> **Current status: Phase 4 (Scan Analysis) - implemented. E57, LAS, LAZ, PLY
-> and XYZ/TXT scans can be imported, and a geometric semantic/instance
-> segmentation baseline detects floors, ceilings and walls with plane-fit
-> confidence. The ribbon, workspace, import and analysis dialogs build and pass
-> automated checks. Revit 2027 ribbon, workspace, engine test and a real
-> 27.8-million-point E57 import are verified. Scan Analysis and Revit 2026 manual
-> checks are still pending.**
+> **Current status: Phase 5 - implemented. E57, LAS, LAZ, PLY and XYZ/TXT scans
+> can be imported, analysed into floor/ceiling/wall instances, and converted
+> into a previewable plan for native Revit floors and walls. A real
+> 27.8-million-point E57 import is verified in Revit 2027; native geometry
+> creation and the Scan Analysis UI still need manual in-Revit verification.**
 >
-> This is not a trained neural network and there is no BIM reconstruction or
-> Revit point-cloud preview yet. Nothing in this repository claims otherwise.
+> This is not a trained neural network and there is no Revit point-cloud preview
+> yet. Generated floors and walls are inferred from a deterministic geometric
+> baseline, not measured accuracy.
 
 ## What exists today
 
@@ -36,9 +35,11 @@ tested and reviewed before the next begins.
 | Real Import Scan dialog and workspace scan summary | Done, XAML probe passed; in-Revit check pending |
 | Geometric floor/ceiling/wall segmentation with confidence | Done, tested with synthetic rooms |
 | Real Scan Analysis dialog and workspace metrics | Done, XAML probe passed; in-Revit check pending |
+| Reconstruction plan with levels, floor polygons and wall lines | Done, tested |
+| Native Revit floor and wall creation with inferred-element marking | Implemented; manual in-Revit check pending |
 | Unit conversion kernel (metres ↔ feet ↔ mm/in/US survey feet) | Done, tested |
 | Structured logging, configuration, error model | Done |
-| Trained ML, BIM reconstruction, Revit preview | **Not started** |
+| Trained ML, doors/windows, Revit point-cloud preview | **Not started** |
 
 ## Repository layout
 
@@ -50,8 +51,8 @@ revo-ai-bim/
 │  ├─ RevoAI.Engine/        Python engine package (revoai_engine)
 │  └─ RevoAI.Geometry/      Python geometry package (revoai_geometry)
 ├─ tests/
-│  ├─ RevoAI.Revit.Tests/   xUnit: protocol, config, real engine process, point cloud and analysis client
-│  ├─ RevoAI.Engine.Tests/  pytest: protocol, dispatch, point cloud, segmentation
+│  ├─ RevoAI.Revit.Tests/   xUnit: protocol, config, real engine process, analysis and reconstruction client
+│  ├─ RevoAI.Engine.Tests/  pytest: protocol, point cloud, segmentation, reconstruction plan
 │  └─ RevoAI.Geometry.Tests/pytest: unit conversions
 ├─ docs/                    Architecture, ADRs, environment, phase report
 ├─ scripts/                 Bootstrap, build, test, add-in install, smoke test
@@ -112,8 +113,10 @@ Open **Workspace** to see the project, levels, settings and engine test, or use
 store. Imported scans are not yet drawn in Revit; the workspace reports the
 stored point count, chunk count, bounds and store path. **Scan Analysis** then
 runs the geometric plane baseline and reports detected floors, ceilings and
-walls with plane-fit confidence. It writes a JSON result but creates no Revit
-geometry.
+walls with plane-fit confidence. **Generate BIM** then previews a plan of native
+floors and walls and creates them in one Revit transaction after confirmation.
+Created elements are marked `REVO-INFERRED`; no geometry is created until the
+user clicks **Create in Revit**.
 
 ## Documentation
 
@@ -126,6 +129,7 @@ geometry.
 - [docs/phase-2-report.md](docs/phase-2-report.md) - Phase 2 completion report
 - [docs/phase-3-report.md](docs/phase-3-report.md) - Phase 3 completion report
 - [docs/phase-4-report.md](docs/phase-4-report.md) - Phase 4 completion report
+- [docs/phase-5-report.md](docs/phase-5-report.md) - Phase 5 completion report
 - [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) — what does not work yet
 
 ## License

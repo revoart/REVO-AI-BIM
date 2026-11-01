@@ -89,6 +89,14 @@ public static class WorkspaceController
             _viewModel?.BeginAnalysis();
         });
 
+    /// <summary>Shows the workspace and opens native floor/wall generation.</summary>
+    public static void GenerateBim(UIApplication application) =>
+        RunWhenIdle(application, () =>
+        {
+            Show(application);
+            _viewModel?.BeginGenerateBim();
+        });
+
     /// <summary>
     /// Runs work on Revit's main thread after the current external command has
     /// returned. A nested WPF modal loop or ExternalEvent raised from inside a

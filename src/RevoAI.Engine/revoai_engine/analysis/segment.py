@@ -247,7 +247,7 @@ def _build_element(
     )
     planarity = _clamp(planarity)
 
-    area = _plane_area(centered)
+    area, boundary = _plane_geometry(centroid, centered)
     density = points.shape[0] / max(area, 1e-6)
     inlier_ratio = points.shape[0] / max(analyzed_points, 1)
     coverage = _clamp(points.shape[0] / max(min_plane_points, analyzed_points * 0.005))
@@ -277,6 +277,7 @@ def _build_element(
             "min": _floats(points.min(axis=0)),
             "max": _floats(points.max(axis=0)),
         },
+        "boundary": [_floats(point) for point in boundary],
         "plane": {
             "normal": _floats(normal),
             "offset": round(offset, 6),
@@ -311,17 +312,43 @@ def _classify(
     return "sloped"
 
 
-def _plane_area(centered: np.ndarray) -> float:
+def _plane_geometry(
+    centroid: np.ndarray, centered: np.ndarray
+) -> tuple[float, list[np.ndarray]]:
+    """Return the projected area and a closed-ish ordered boundary.
+
+    The boundary is an ordered convex hull in the plane, lifted back to 3D. It
+    is a reconstruction aid, not a claim that every indentation was captured.
+    """
+
     if centered.shape[0] < 3:
-        return 0.0
+        return 0.0, []
 
     try:
         _, _, vh = np.linalg.svd(centered, full_matrices=False)
-        projected = centered @ vh[:2].T
-        return float(ConvexHull(projected).volume)
+        basis = vh[:2]
+        projected = centered @ basis.T
+        hull = ConvexHull(projected)
+        vertices = projected[hull.vertices]
+        area = float(hull.volume)
     except (QhullError, ValueError):
         extents = centered.max(axis=0) - centered.min(axis=0)
-        return float(extents[0] * extents[1])
+        low = projected.min(axis=0) if "projected" in locals() else np.zeros(2)
+        high = projected.max(axis=0) if "projected" in locals() else extents[:2]
+        vertices = np.array(
+            [
+                [low[0], low[1]],
+                [high[0], low[1]],
+                [high[0], high[1]],
+                [low[0], high[1]],
+            ]
+        )
+        area = float((high[0] - low[0]) * (high[1] - low[1]))
+        if "basis" not in locals():
+            basis = np.eye(3)[:2]
+
+    boundary = [centroid + point[0] * basis[0] + point[1] * basis[1] for point in vertices]
+    return max(area, 0.0), boundary
 
 
 def _result_path(store_path: Path) -> Path:

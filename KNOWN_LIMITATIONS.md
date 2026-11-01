@@ -16,11 +16,12 @@ This file is deliberately blunt. Anything listed here is **not working** or
    metadata; it does not draw points, meshes or placeholder geometry.
 4. **No trained ML.** Scan Analysis is a deterministic geometric RANSAC
    baseline. There is no neural network, training dataset or learned model.
-5. **No BIM reconstruction.** No walls, floors, doors, windows or other scanned
-   elements are created. Detected planes are JSON analysis data, not Revit
-   geometry. Level creation is project setup, not Scan-to-BIM.
-6. **No accuracy figures.** Nothing has been reconstructed or measured yet.
-   Plane-fit confidence is not dimensional accuracy.
+5. **Limited BIM reconstruction.** Phase 5 can create native floors and walls
+   from the geometric plan, marked `REVO-INFERRED`. Doors, windows, ceilings,
+   furniture, stairs and curved surfaces are not created. This still needs a
+   manual in-Revit check.
+6. **No accuracy figures.** No reconstructed element has been compared against
+   measured ground truth. Plane-fit confidence is not dimensional accuracy.
 7. **No import streaming or cancellation.** Readers load the source cloud
    before chunking, so peak memory scales with the source file. The UI shows an
    indeterminate progress bar, and the engine has no cancel request. Phase 9.
@@ -50,6 +51,23 @@ This file is deliberately blunt. Anything listed here is **not working** or
   or very large scans can miss small surfaces.
 - The result is written to `analysis/segmentation.json`; it is not imported into
   Revit and does not create geometry.
+
+## Generate BIM limits (Phase 5)
+
+- Floors are created from convex-hull plane boundaries. Concave rooms, courtyard
+  cut-outs and L-shaped spaces are oversimplified.
+- One wall line is derived from the longest boundary extent of each wall plane.
+  Coplanar wall fragments are not merged.
+- Default project floor and wall types are used. The requested wall thickness is
+  not applied because Revit wall type width is not instance-editable.
+- Ceilings are used only to determine wall height when a ceiling is available;
+  ceiling geometry is not created.
+- Levels are clustered by floor elevation. Multi-storey scans can produce
+  questionable levels and floor/ceiling assignments.
+- Creation happens in one transaction. Any Revit geometry failure rolls back the
+  whole batch.
+- The generated elements are labelled `REVO-INFERRED`; they are not a measured
+  as-built guarantee.
 
 ## Environment and compatibility
 

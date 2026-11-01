@@ -10,10 +10,12 @@ from revoai_engine.pointcloud import import_point_cloud
 from revoai_engine.protocol import (
     ErrorCode,
     PointCloudImportParams,
+    ReconstructionPlanParams,
     RpcRequest,
     SegmentationInfoParams,
     SegmentationRunParams,
 )
+from revoai_engine.reconstruction import create_plan
 from revoai_engine.service import EngineState, dispatch
 
 
@@ -94,6 +96,7 @@ def test_segmentation_detects_room_planes_and_persists_result(tmp_path: Path) ->
         assert element["pointCount"] >= 100
         assert len(element["plane"]["normal"]) == 3
         assert len(element["bounds"]["min"]) == 3
+        assert len(element["boundary"]) >= 3
         assert element["signals"]["planarity"] > 0.9
 
     stored = load_segmentation(imported["storePath"])
@@ -137,6 +140,86 @@ def test_segmentation_info_is_available_over_protocol(tmp_path: Path) -> None:
     assert info is not None and info.error is None
     assert info.result["scanId"] == imported["scanId"]
     assert info.result["summary"] == run.result["summary"]
+
+
+def test_reconstruction_plan_creates_levels_floors_and_walls(tmp_path: Path) -> None:
+    imported = _import_room(tmp_path, name="plan-room")
+    run_segmentation(
+        SegmentationRunParams(
+            store_path=imported["storePath"],
+            voxel_size_meters=0.0,
+            max_points=10_000,
+            plane_distance_meters=0.01,
+            min_plane_points=100,
+            max_planes=20,
+        )
+    )
+
+    plan = create_plan(
+        ReconstructionPlanParams(
+            store_path=imported["storePath"],
+            confidence_threshold=0.5,
+            fallback_wall_height_meters=2.7,
+            level_tolerance_meters=0.25,
+            max_elements=20,
+        )
+    )
+
+    assert plan["method"] == "geometric-floor-wall-plan/1"
+    assert len(plan["levels"]) == 1
+    assert len(plan["floors"]) == 1
+    assert len(plan["walls"]) == 4
+    assert Path(plan["resultPath"]).is_file()
+    assert plan["levels"][0]["elevationMeters"] == pytest.approx(0.0, abs=0.02)
+
+    for wall in plan["walls"]:
+        assert len(wall["start"]) == 3
+        assert len(wall["end"]) == 3
+        assert wall["heightMeters"] == pytest.approx(2.7, abs=0.05)
+        assert wall["heightSource"] == "ceiling"
+        assert wall["start"][2] == pytest.approx(0.0, abs=0.02)
+        assert wall["end"][2] == pytest.approx(0.0, abs=0.02)
+
+    floor = plan["floors"][0]
+    assert len(floor["boundary"]) >= 3
+    assert floor["areaM2"] > 10.0
+
+
+def test_reconstruction_plan_over_protocol(tmp_path: Path) -> None:
+    imported = _import_room(tmp_path, name="plan-protocol-room")
+    state = EngineState()
+    dispatch(state, _request("initialize", _initialize_params()))
+    dispatch(
+        state,
+        _request(
+            "segmentation.run",
+            {
+                "storePath": imported["storePath"],
+                "voxelSizeMeters": 0.0,
+                "maxPoints": 10_000,
+                "planeDistanceMeters": 0.01,
+                "minPlanePoints": 100,
+                "maxPlanes": 20,
+            },
+        ),
+    )
+
+    response = dispatch(
+        state,
+        _request(
+            "reconstruction.plan",
+            {
+                "storePath": imported["storePath"],
+                "confidenceThreshold": 0.5,
+                "maxElements": 20,
+            },
+            "plan",
+        ),
+    )
+    assert response is not None and response.error is None
+    assert len(response.result["levels"]) == 1
+    assert len(response.result["floors"]) == 1
+    assert len(response.result["walls"]) == 4
 
 
 def test_segmentation_not_found_is_typed(tmp_path: Path) -> None:

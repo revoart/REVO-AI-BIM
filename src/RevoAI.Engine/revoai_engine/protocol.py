@@ -24,6 +24,7 @@ METHOD_POINTCLOUD_INFO = "pointcloud.info"
 METHOD_POINTCLOUD_QUERY = "pointcloud.query"
 METHOD_SEGMENTATION_RUN = "segmentation.run"
 METHOD_SEGMENTATION_INFO = "segmentation.info"
+METHOD_RECONSTRUCTION_PLAN = "reconstruction.plan"
 
 CAPABILITIES = (
     METHOD_INITIALIZE,
@@ -34,6 +35,7 @@ CAPABILITIES = (
     METHOD_POINTCLOUD_QUERY,
     METHOD_SEGMENTATION_RUN,
     METHOD_SEGMENTATION_INFO,
+    METHOD_RECONSTRUCTION_PLAN,
 )
 
 
@@ -405,6 +407,7 @@ class SegmentationElement(CamelModel):
     area_m2: float
     centroid: list[float]
     bounds: Bounds3
+    boundary: list[list[float]] = Field(default_factory=list)
     plane: PlaneModel
     signals: SegmentationSignals
 
@@ -435,6 +438,90 @@ class SegmentationResult(CamelModel):
     parameters: dict[str, Any]
     summary: SegmentationSummary
     elements: list[SegmentationElement]
+    warnings: list[str]
+    result_path: str
+    created_at: str
+    engine_version: str
+    elapsed_ms: float
+
+
+class ReconstructionPlanParams(CamelModel):
+    store_path: str = Field(min_length=1)
+    confidence_threshold: float = 0.75
+    fallback_wall_height_meters: float = 2.7
+    level_tolerance_meters: float = 0.25
+    max_elements: int = 200
+
+    @field_validator("confidence_threshold")
+    @classmethod
+    def _confidence_range(cls, value: float) -> float:
+        if not 0.0 <= value <= 1.0:
+            raise ValueError("confidenceThreshold must be between 0 and 1.")
+        return value
+
+    @field_validator("fallback_wall_height_meters")
+    @classmethod
+    def _wall_height_range(cls, value: float) -> float:
+        if not 0.5 <= value <= 10.0:
+            raise ValueError("fallbackWallHeightMeters must be between 0.5 and 10 m.")
+        return value
+
+    @field_validator("level_tolerance_meters")
+    @classmethod
+    def _level_tolerance_range(cls, value: float) -> float:
+        if not 0.01 <= value <= 2.0:
+            raise ValueError("levelToleranceMeters must be between 0.01 and 2 m.")
+        return value
+
+    @field_validator("max_elements")
+    @classmethod
+    def _max_elements_range(cls, value: int) -> int:
+        if not 1 <= value <= 1000:
+            raise ValueError("maxElements must be between 1 and 1000.")
+        return value
+
+
+class PlanLevel(CamelModel):
+    id: str
+    name: str
+    elevation_meters: float
+
+
+class PlanFloor(CamelModel):
+    id: str
+    source_segment_id: str
+    level_id: str
+    boundary: list[list[float]]
+    area_m2: float
+    confidence: float
+
+
+class PlanWall(CamelModel):
+    id: str
+    source_segment_id: str
+    level_id: str
+    start: list[float]
+    end: list[float]
+    height_meters: float
+    height_source: str
+    confidence: float
+
+    @field_validator("start", "end")
+    @classmethod
+    def _wall_point_is_three(cls, value: list[float]) -> list[float]:
+        if len(value) != 3:
+            raise ValueError("Wall endpoints must contain three components.")
+        return value
+
+
+class ReconstructionPlanResult(CamelModel):
+    scan_id: str
+    store_path: str
+    method: str
+    parameters: dict[str, Any]
+    levels: list[PlanLevel]
+    floors: list[PlanFloor]
+    walls: list[PlanWall]
     warnings: list[str]
     result_path: str
     created_at: str

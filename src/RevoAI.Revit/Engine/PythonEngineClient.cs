@@ -169,6 +169,16 @@ public sealed class PythonEngineClient : IAsyncDisposable
             timeout ?? _requestTimeout,
             cancellationToken);
 
+    public Task<ReconstructionPlanResult> CreateReconstructionPlanAsync(
+        ReconstructionPlanParams parameters,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<ReconstructionPlanResult>(
+            EngineMethods.ReconstructionPlan,
+            parameters,
+            timeout ?? TimeSpan.FromMinutes(5),
+            cancellationToken);
+
     public async Task<ShutdownResult> ShutdownAsync(CancellationToken cancellationToken = default)
     {
         if (_disposed || _process.HasExited)

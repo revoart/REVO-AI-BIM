@@ -67,6 +67,9 @@ public sealed class SegmentationElement
 
     public required Bounds3 Bounds { get; init; }
 
+    /// <summary>Ordered plane boundary points; empty for older results.</summary>
+    public IReadOnlyList<double[]>? Boundary { get; init; }
+
     public required PlaneModel Plane { get; init; }
 
     public required SegmentationSignals Signals { get; init; }

@@ -26,7 +26,7 @@ confidence, geometry primitives). The C# side owns every Revit transaction.
 | --- | --- | --- |
 | `RevoAI.Contracts` | `net8.0` | Wire DTOs, protocol version, error codes, JSON settings. No Revit or Windows dependency, so it is reusable by a future Revit 2025 build. |
 | `RevoAI.Revit` | `net10.0-windows` | Add-in entry point, configuration, logging, engine process client, ribbon, WPF workspace and point cloud import dialog. |
-| `RevoAI.Engine` | Python ≥3.11 | Local processing service: transport, handshake, point cloud readers, preprocessing, chunk store, spatial queries and the geometric segmentation baseline. |
+| `RevoAI.Engine` | Python ≥3.11 | Local processing service: transport, point cloud, spatial queries, segmentation baseline and reconstruction planning. |
 | `RevoAI.Geometry` | Python ≥3.11 | Unit kernel and, in later phases, reconstruction algorithms. |
 
 ## 3. Transport and protocol
@@ -39,7 +39,7 @@ stdin/stdout. See [ADR 0002](adr/0002-engine-ipc.md).
   are currently ignored by the client (reserved for progress events).
 - Methods: `initialize`, `ping`, `shutdown`, `pointcloud.import`,
   `pointcloud.info`, `pointcloud.query`, `segmentation.run`,
-  `segmentation.info`.
+  `segmentation.info`, `reconstruction.plan`.
 - Major protocol version must match (`1.x` accepted). Mismatch returns
   `-32010`.
 - Methods other than `ping`/`shutdown` require `initialize` first (`-32011`).
@@ -153,22 +153,49 @@ point cloud store
 - Analysis writes JSON only. It never creates Revit geometry.
 - `segmentation.info` reads the stored result and returns the same shape.
 
-## 10. Threading rules
+## 10. Reconstruction plan and native geometry
+
+```
+segmentation.json
+  → confidence filter
+  → floor level clustering
+  → closed floor polygons
+  → wall line + base level + wall height
+  → reconstruction-plan.json
+  → C# Revit transaction: levels, Floor.Create, Wall.Create
+```
+
+- Plan creation is read-only. It writes JSON beside the scan.
+- Floors use ordered plane boundaries from segmentation; the current boundary
+  is a convex hull, so concave spaces are simplified.
+- Walls use the longest boundary extent as a line. The base level is the nearest
+  floor below the wall; height comes from the nearest ceiling above, otherwise
+  the configured fallback.
+- Existing Revit levels are reused by elevation; missing levels are created.
+- `Generate BIM` shows the plan first. Only **Create in Revit** starts the
+  transaction.
+- Created floors and walls receive `REVO-INFERRED` marks and comments containing
+  the source segment and confidence.
+- Any failure rolls back the transaction. No placeholder geometry is created.
+- Default project floor/wall types are used; wall type width is not
+  instance-editable.
+
+## 11. Threading rules
 
 - Revit API calls run only on Revit's main thread.
 - The modeless WPF UI (Phases 2-3) marshals Revit API work through `ExternalEvent`.
 - The Python engine runs out of process, so it cannot touch the Revit API.
 - Long operations must be cancellable and must report progress.
 
-## 11. Versioning
+## 12. Versioning
 
-- Product version follows SemVer (`0.4.0`).
+- Product version follows SemVer (`0.5.0`).
 - Assembly/file versions mirror it.
 - Protocol has an independent `MAJOR.MINOR`.
 - Each Revit version gets its own build output folder
   (`bin\<Configuration>\<RevitVersion>`) and its own manifest installation.
 
-## 12. User interface and Revit marshalling
+## 13. User interface and Revit marshalling
 
 - Ribbon built in `Ribbon/RevoRibbon.cs`; each button points at an
   `IExternalCommand` in `Commands/`.
@@ -179,7 +206,10 @@ point cloud store
   geometry. The workspace displays the returned metadata.
 - **Scan Analysis** opens the workspace and a real analysis dialog for the
   imported store. The dialog calls `segmentation.run` and displays segments and
-  confidence. It still creates no Revit geometry.
+  confidence.
+- **Generate BIM** opens a plan preview dialog. **Create in Revit** runs
+  `ModelBuilder.Create` through `RevitTaskRunner` in one transaction. It creates
+  native floors and walls and marks them inferred.
 - The modeless `WorkspaceWindow` binds to `WorkspaceViewModel`.
 - Every Revit API call from the window goes through `RevitTaskRunner`, which
   queues work and raises an `ExternalEvent`. The WPF thread never touches
@@ -190,7 +220,7 @@ point cloud store
 - Settings are persisted through `RevoConfigWriter`; the engine reads them when
   it starts.
 
-## 13. Error handling
+## 14. Error handling
 
 All engine failures are typed `RpcError` values with a machine code, a human
 message and, where possible, a `remedy`. The add-in must present the remedy and

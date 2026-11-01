@@ -5,10 +5,10 @@
 | Layer | Tool | What it proves |
 | --- | --- | --- |
 | C# unit | xUnit | Protocol serialization, version rules, configuration resolution |
-| C# integration | xUnit + real Python process | Add-in can start, handshake, ping, import/query a scan, run segmentation and stop the engine |
-| Python unit | pytest | Protocol models, dispatch rules, unit conversions, readers, preprocessing, store, segmentation |
+| C# integration | xUnit + real Python process | Add-in can start, import/query, segment, create a reconstruction plan and stop the engine |
+| Python unit | pytest | Protocol, units, readers, store, segmentation, reconstruction plan |
 | Python process | pytest subprocess | The real stdio loop answers correctly and exits cleanly |
-| Revit manual | Revit 2026/2027 | Ribbon, workspace, settings, level creation, scan import and analysis (Phase 2+) |
+| Revit manual | Revit 2026/2027 | Ribbon, import, analysis, native floor/wall creation (Phase 2+) |
 | WPF probe | `scripts/probe-ui.ps1` | Windows and ribbon icons construct without Revit |
 
 There is no Revit API automation in Phase 1. Revit-dependent behaviour is
@@ -44,7 +44,7 @@ protocol. When the virtual environment is absent, the tests print
 .NET CI jobs remain green. The Python pytest suite is the authoritative check in
 that case.
 
-## 4. Coverage in Phases 1–4
+## 4. Coverage in Phases 1–5
 
 Covered:
 
@@ -69,6 +69,11 @@ Covered:
 - `segmentation.run` / `segmentation.info` round trip and typed
   `ANALYSIS_NOT_FOUND`.
 - Real C# → Python segmentation round trip.
+- Ordered segmentation boundaries and reconstruction planning.
+- Synthetic room plan: one level, one floor polygon and four wall lines.
+- Real C# → Python `reconstruction.plan` round trip.
+- Native floor/wall creation is build-tested but **not** yet verified inside
+  Revit.
 
 Not covered (by design, later phases):
 
@@ -88,26 +93,29 @@ Not covered (by design, later phases):
 
 Record the outcome in `docs/phase-1-report.md`.
 
-## 6. Manual Revit verification (Phases 2–4)
+## 6. Manual Revit verification (Phases 2–5)
 
-1. Build and install 0.4.0 for Revit 2026 and 2027.
-2. Restart Revit so the new manifest is loaded.
+1. Build and install **0.5.0** for Revit 2026 and 2027.
+2. Restart Revit. If Windows asks about the unsigned add-in, choose **Always
+   Load**; choosing "Do Not Load" leaves the Revo tab absent.
 3. Confirm the **REVO AI BIM** tab and all eight controls.
 4. Open **Workspace**, refresh the project and create a test level.
-5. Run **Test connection** and confirm the engine reports 0.4.0 and the point
-   cloud plus segmentation capabilities.
+5. Run **Test connection** and confirm the engine reports 0.5.0 and the
+   reconstruction capability.
 6. Open **Import Scan**, choose a small E57/LAS/PLY/XYZ file and import it.
 7. Confirm the workspace shows the format, unit source, stored point count,
    chunk count, bounds and local store path.
-8. Open **Scan Analysis**, keep the defaults and run it.
-9. Confirm the dialog lists floor/ceiling/wall instances with confidence and
-   that the workspace shows detected elements and mean confidence.
-10. Confirm no Revit geometry or point-cloud graphic was invented and that the
-    analysis result file exists under `analysis/segmentation.json`.
-11. Repeat for Revit 2027.
+8. Open **Scan Analysis**, keep the defaults and run it. Confirm segments and
+   confidence, and that `analysis/segmentation.json` exists.
+9. Open **Generate BIM**, keep the defaults and click **Create preview**.
+10. Confirm levels, floors and walls appear in the preview with no model
+    changes yet.
+11. Click **Create in Revit**. Confirm native floors/walls appear, carry
+    `REVO-INFERRED`, and that failure rolls back cleanly.
+12. Repeat for Revit 2027.
 
-Record the outcome in `docs/phase-2-report.md`, `docs/phase-3-report.md` and
-`docs/phase-4-report.md`.
+Record the outcome in the phase reports. Native geometry creation must not be
+marked verified until it has been observed in Revit.
 
 ## 7. Rules
 

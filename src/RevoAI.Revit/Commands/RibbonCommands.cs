@@ -44,11 +44,11 @@ public sealed class ScanAnalysisCommand : RevoCommandBase
 [Regeneration(RegenerationOption.Manual)]
 public sealed class GenerateBimCommand : RevoCommandBase
 {
-    protected override Result ExecuteCore(ExternalCommandData commandData) =>
-        PhaseMessages.Show(
-            "Generate BIM",
-            "Native wall and floor generation is implemented in Phase 5.\n\n" +
-            "This build never creates placeholder or mesh geometry in your model.");
+    protected override Result ExecuteCore(ExternalCommandData commandData)
+    {
+        WorkspaceController.GenerateBim(commandData.Application);
+        return Result.Succeeded;
+    }
 }
 
 [Transaction(TransactionMode.Manual)]

@@ -44,6 +44,7 @@ public static class EngineMethods
     public const string PointCloudQuery = "pointcloud.query";
     public const string SegmentationRun = "segmentation.run";
     public const string SegmentationInfo = "segmentation.info";
+    public const string ReconstructionPlan = "reconstruction.plan";
 }
 
 /// <summary>
