@@ -12,6 +12,14 @@ using RevoAI.Revit.RevitApi;
 
 namespace RevoAI.Revit.UI;
 
+public enum WorkspaceStage
+{
+    Project,
+    Import,
+    Analyze,
+    Generate,
+}
+
 public sealed class WorkspaceViewModel : ObservableObject
 {
     private readonly RevitTaskRunner _runner;
@@ -46,13 +54,7 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     private string _statusMessage = "Workspace ready. No scan loaded.";
     private bool _isBusy;
-    private bool _initialized;
-    private bool _importDialogOpen;
-    private bool _analysisDialogOpen;
-    private bool _reconstructionDialogOpen;
-    private ImportScanWindow? _importWindow;
-    private ScanAnalysisWindow? _analysisWindow;
-    private ReconstructionWindow? _reconstructionWindow;
+    private WorkspaceStage _stage = WorkspaceStage.Project;
     private double _progressValue;
     private int _detectedElements;
     private string _confidenceText = "—";
@@ -76,8 +78,23 @@ public sealed class WorkspaceViewModel : ObservableObject
             "Other",
         ];
 
+        Import = new ImportScanViewModel();
+        Analysis = new ScanAnalysisViewModel(string.Empty, _confidenceThreshold);
+        Generate = new ReconstructionViewModel(
+            _runner,
+            string.Empty,
+            _confidenceThreshold,
+            _markInferredGeometry);
+        Import.ImportCompleted += ApplyImportResult;
+        Analysis.AnalysisCompleted += ApplyAnalysisResult;
+        Generate.BuildCompleted += ApplyBuildResult;
+
         RefreshCommand = new AsyncRelayCommand(RefreshAsync);
-        ImportScanCommand = new AsyncRelayCommand(BeginImportAsync);
+        ImportScanCommand = new RelayCommand(ShowImportStage);
+        ShowProjectStageCommand = new RelayCommand(ShowProjectStage);
+        ShowImportStageCommand = new RelayCommand(ShowImportStage);
+        ShowAnalysisStageCommand = new RelayCommand(ShowAnalysisStage);
+        ShowGenerateStageCommand = new RelayCommand(ShowGenerateStage);
         TestEngineCommand = new AsyncRelayCommand(TestEngineAsync);
         AddLevelCommand = new RelayCommand(AddLevel);
         RemoveLevelCommand = new RelayCommand(RemoveLevel, () => SelectedLevel is { IsExisting: false });
@@ -94,9 +111,47 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public IReadOnlyList<string> BuildingTypes { get; }
 
+    public ImportScanViewModel Import { get; }
+
+    public ScanAnalysisViewModel Analysis { get; }
+
+    public ReconstructionViewModel Generate { get; }
+
     public ICommand RefreshCommand { get; }
 
     public ICommand ImportScanCommand { get; }
+
+    public ICommand ShowProjectStageCommand { get; }
+
+    public ICommand ShowImportStageCommand { get; }
+
+    public ICommand ShowAnalysisStageCommand { get; }
+
+    public ICommand ShowGenerateStageCommand { get; }
+
+    public bool IsProjectStage => _stage == WorkspaceStage.Project;
+
+    public bool IsImportStage => _stage == WorkspaceStage.Import;
+
+    public bool IsAnalyzeStage => _stage == WorkspaceStage.Analyze;
+
+    public bool IsGenerateStage => _stage == WorkspaceStage.Generate;
+
+    public string StageTitle => _stage switch
+    {
+        WorkspaceStage.Import => "Import scan",
+        WorkspaceStage.Analyze => "Analyze scan",
+        WorkspaceStage.Generate => "Generate BIM",
+        _ => "Project setup",
+    };
+
+    public string StageSubtitle => _stage switch
+    {
+        WorkspaceStage.Import => "Bring a supported scan into a local chunked store.",
+        WorkspaceStage.Analyze => "Detect planar floors, ceilings and walls with confidence.",
+        WorkspaceStage.Generate => "Preview the plan, then create native Revit floors and walls.",
+        _ => "Inspect the project, levels, engine and workspace settings.",
+    };
 
     public ICommand TestEngineCommand { get; }
 
@@ -201,8 +256,16 @@ public sealed class WorkspaceViewModel : ObservableObject
     public string ScanStorePath
     {
         get => _scanStorePath;
-        private set => SetProperty(ref _scanStorePath, value);
+        private set
+        {
+            if (SetProperty(ref _scanStorePath, value))
+            {
+                OnPropertyChanged(nameof(HasScan));
+            }
+        }
     }
+
+    public bool HasScan => HasScanStore();
 
     public string ScanWarnings
     {
@@ -219,7 +282,13 @@ public sealed class WorkspaceViewModel : ObservableObject
     public string WallHeightText
     {
         get => _wallHeightText;
-        set => SetProperty(ref _wallHeightText, value);
+        set
+        {
+            if (SetProperty(ref _wallHeightText, value))
+            {
+                Generate.FallbackWallHeightText = value;
+            }
+        }
     }
 
     public string FloorThicknessText
@@ -231,13 +300,26 @@ public sealed class WorkspaceViewModel : ObservableObject
     public double ConfidenceThreshold
     {
         get => _confidenceThreshold;
-        set => SetProperty(ref _confidenceThreshold, value);
+        set
+        {
+            if (SetProperty(ref _confidenceThreshold, value))
+            {
+                Analysis.ConfidenceThresholdText = value.ToString("0.00", CultureInfo.InvariantCulture);
+                Generate.ConfidenceThresholdText = value.ToString("0.00", CultureInfo.InvariantCulture);
+            }
+        }
     }
 
     public bool MarkInferredGeometry
     {
         get => _markInferredGeometry;
-        set => SetProperty(ref _markInferredGeometry, value);
+        set
+        {
+            if (SetProperty(ref _markInferredGeometry, value))
+            {
+                Generate.MarkInferred = value;
+            }
+        }
     }
 
     public LevelRowViewModel? SelectedLevel
@@ -322,14 +404,78 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public Task InitializeAsync() => RefreshAsync();
 
-    /// <summary>Opens the import dialog from the ribbon while the workspace is visible.</summary>
-    public void BeginImport() => _ = BeginImportAsync();
+    /// <summary>Initializes from the Idling callback, already on Revit's main thread.</summary>
+    public void InitializeFrom(UIApplication application)
+    {
+        try
+        {
+            var snapshot = DocumentReader.Read(application);
+            ApplySnapshot(snapshot);
+            StatusMessage = $"Loaded '{snapshot.Title}'.";
+        }
+        catch (Exception ex)
+        {
+            AddError("Could not read the active Revit document.", ex);
+        }
+    }
 
-    /// <summary>Runs Scan Analysis for the imported scan, if one is loaded.</summary>
-    public void BeginAnalysis() => _ = BeginAnalysisAsync();
+    public void ShowProjectStage() => SetStage(WorkspaceStage.Project);
 
-    /// <summary>Opens the native floor/wall generation dialog for the imported scan.</summary>
-    public void BeginGenerateBim() => _ = BeginGenerateBimAsync();
+    public void ShowImportStage() => SetStage(WorkspaceStage.Import);
+
+    public void ShowAnalysisStage()
+    {
+        PrepareScanStages();
+        SetStage(WorkspaceStage.Analyze);
+        if (!HasScanStore())
+        {
+            StatusMessage = "Import a scan first; Scan Analysis becomes available after an import.";
+        }
+    }
+
+    public void ShowGenerateBim() => ShowGenerateStage();
+
+    public void ShowGenerateStage()
+    {
+        PrepareScanStages();
+        SetStage(WorkspaceStage.Generate);
+        if (!HasScanStore())
+        {
+            StatusMessage = "Import a scan and run Scan Analysis before generating BIM.";
+        }
+    }
+
+    private void SetStage(WorkspaceStage stage)
+    {
+        if (_stage == stage)
+        {
+            return;
+        }
+
+        _stage = stage;
+        OnPropertyChanged(nameof(IsProjectStage));
+        OnPropertyChanged(nameof(IsImportStage));
+        OnPropertyChanged(nameof(IsAnalyzeStage));
+        OnPropertyChanged(nameof(IsGenerateStage));
+        OnPropertyChanged(nameof(StageTitle));
+        OnPropertyChanged(nameof(StageSubtitle));
+    }
+
+    private bool HasScanStore() =>
+        !string.IsNullOrWhiteSpace(ScanStorePath) &&
+        ScanStorePath != "—" &&
+        Directory.Exists(ScanStorePath);
+
+    private void PrepareScanStages()
+    {
+        if (!HasScanStore())
+        {
+            return;
+        }
+
+        Analysis.StorePath = ScanStorePath;
+        Generate.StorePath = ScanStorePath;
+    }
 
     private async Task RefreshAsync()
     {
@@ -344,7 +490,6 @@ public sealed class WorkspaceViewModel : ObservableObject
         {
             var snapshot = await _runner.InvokeAsync(DocumentReader.Read);
             ApplySnapshot(snapshot);
-            _initialized = true;
             StatusMessage = $"Loaded '{snapshot.Title}'.";
         }
         catch (Exception ex)
@@ -508,170 +653,6 @@ public sealed class WorkspaceViewModel : ObservableObject
         }
     }
 
-    private Task BeginImportAsync()
-    {
-        if (_importDialogOpen)
-        {
-            _importWindow?.Activate();
-            return Task.CompletedTask;
-        }
-
-        _importDialogOpen = true;
-        try
-        {
-            var window = new ImportScanWindow();
-            window.ViewModel.ImportCompleted += ApplyImportResult;
-            window.Closed += (_, _) =>
-            {
-                _importWindow = null;
-                _importDialogOpen = false;
-                if (!_initialized)
-                {
-                    _ = InitializeAsync();
-                }
-            };
-
-            var owner = WorkspaceController.CurrentWindow;
-            if (owner is { IsLoaded: true })
-            {
-                window.Owner = owner;
-            }
-            else if (_revitWindowHandle != IntPtr.Zero)
-            {
-                new System.Windows.Interop.WindowInteropHelper(window) { Owner = _revitWindowHandle };
-            }
-
-            _importWindow = window;
-            window.Show();
-            window.WindowState = WindowState.Normal;
-            window.Activate();
-        }
-        catch (Exception ex)
-        {
-            _importDialogOpen = false;
-            _importWindow = null;
-            AddError("Could not open the point cloud import dialog.", ex);
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private Task BeginAnalysisAsync()
-    {
-        if (_analysisDialogOpen)
-        {
-            _analysisWindow?.Activate();
-            return Task.CompletedTask;
-        }
-
-        if (string.IsNullOrWhiteSpace(ScanStorePath) ||
-            ScanStorePath == "—" ||
-            !Directory.Exists(ScanStorePath))
-        {
-            const string message = "Import a scan before running Scan Analysis.";
-            Errors.Add(message);
-            StatusMessage = message;
-            return Task.CompletedTask;
-        }
-
-        _analysisDialogOpen = true;
-        try
-        {
-            var window = new ScanAnalysisWindow(ScanStorePath, ConfidenceThreshold);
-            window.ViewModel.AnalysisCompleted += ApplyAnalysisResult;
-            window.Closed += (_, _) =>
-            {
-                _analysisWindow = null;
-                _analysisDialogOpen = false;
-                if (!_initialized)
-                {
-                    _ = InitializeAsync();
-                }
-            };
-
-            var owner = WorkspaceController.CurrentWindow;
-            if (owner is { IsLoaded: true })
-            {
-                window.Owner = owner;
-            }
-            else if (_revitWindowHandle != IntPtr.Zero)
-            {
-                new System.Windows.Interop.WindowInteropHelper(window) { Owner = _revitWindowHandle };
-            }
-
-            _analysisWindow = window;
-            window.Show();
-            window.WindowState = WindowState.Normal;
-            window.Activate();
-        }
-        catch (Exception ex)
-        {
-            _analysisDialogOpen = false;
-            _analysisWindow = null;
-            AddError("Could not open the Scan Analysis dialog.", ex);
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private Task BeginGenerateBimAsync()
-    {
-        if (_reconstructionDialogOpen)
-        {
-            _reconstructionWindow?.Activate();
-            return Task.CompletedTask;
-        }
-
-        if (string.IsNullOrWhiteSpace(ScanStorePath) ||
-            ScanStorePath == "—" ||
-            !Directory.Exists(ScanStorePath))
-        {
-            const string message = "Import a scan before generating BIM.";
-            Errors.Add(message);
-            StatusMessage = message;
-            return Task.CompletedTask;
-        }
-
-        _reconstructionDialogOpen = true;
-        try
-        {
-            var window = new ReconstructionWindow(
-                _runner,
-                ScanStorePath,
-                ConfidenceThreshold,
-                MarkInferredGeometry);
-            window.ViewModel.BuildCompleted += ApplyBuildResult;
-            window.Closed += (_, _) =>
-            {
-                _reconstructionWindow = null;
-                _reconstructionDialogOpen = false;
-            };
-
-            var owner = WorkspaceController.CurrentWindow;
-            if (owner is { IsLoaded: true })
-            {
-                window.Owner = owner;
-            }
-            else if (_revitWindowHandle != IntPtr.Zero)
-            {
-                new System.Windows.Interop.WindowInteropHelper(window) { Owner = _revitWindowHandle };
-            }
-
-            _reconstructionWindow = window;
-            window.Show();
-            window.WindowState = WindowState.Normal;
-            window.Activate();
-        }
-        catch (Exception ex)
-        {
-            _reconstructionDialogOpen = false;
-            _reconstructionWindow = null;
-            AddError("Could not open the Generate BIM dialog.", ex);
-        }
-
-        return Task.CompletedTask;
-    }
-
     private void ApplyBuildResult(ReconstructionBuildResult result)
     {
         ProgressValue = 100;
@@ -711,6 +692,8 @@ public sealed class WorkspaceViewModel : ObservableObject
             $"[{result.Bounds.Max[0]:0.###}, {result.Bounds.Max[1]:0.###}, {result.Bounds.Max[2]:0.###}] m";
         ScanChunks = result.ChunkCount.ToString("N0", CultureInfo.CurrentCulture);
         ScanStorePath = result.StorePath;
+        Analysis.StorePath = result.StorePath;
+        Generate.StorePath = result.StorePath;
         ScanWarnings = result.Warnings.Count == 0
             ? "No import warnings."
             : string.Join(Environment.NewLine, result.Warnings.Select(warning => "• " + warning));

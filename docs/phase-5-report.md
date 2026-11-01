@@ -1,8 +1,9 @@
 # Phase 5 Completion Report — Native Walls and Floors
 
-**Version:** 0.5.0  
+**Version:** 0.5.1  
 **Date:** 2026-11-01  
-**Status:** Implemented and automatically verified. Native geometry creation in
+**Status:** Implemented and automatically verified. Import, analysis and
+generation now share one staged Workspace window. Native geometry creation in
 Revit is **not yet manually verified**.
 
 ## 1. Scope delivered
@@ -15,7 +16,7 @@ Revit is **not yet manually verified**.
 | Closed floor polygons | Working, tested |
 | Wall lines with base level and height | Working, tested |
 | `reconstruction.plan` JSON-RPC method | Working, tested |
-| Generate BIM preview dialog | Implemented, XAML probe passed |
+| Generate BIM preview stage in the Workspace window | Implemented, XAML probe passed |
 | Native Revit `Floor.Create` / `Wall.Create` | Implemented, build-tested; manual check pending |
 | Existing level reuse / missing level creation | Implemented; manual check pending |
 | `REVO-INFERRED` marking | Implemented; manual check pending |
@@ -51,7 +52,7 @@ segmentation.json
 | .NET tests | **32 passed** |
 | Revit 2026 Release build | **0 warnings, 0 errors** |
 | Revit 2027 Release build | **0 warnings, 0 errors** |
-| WPF probe (workspace, import, analysis, Generate BIM, settings, about) | **Passed** |
+| WPF probe (single workspace with all stages, settings, about) | **Passed** |
 | Synthetic room plan | **1 level, 1 floor, 4 walls** |
 | Real C# → Python `reconstruction.plan` | **Passed** |
 | Real 27.8M-point E57 plan | **2 levels, 3 floors, 0 walls** |
@@ -74,10 +75,10 @@ not a wall-creation test.
 
 ## 5. Manual verification required
 
-1. Install 0.5.0 for Revit 2026 and 2027.
+1. Install 0.5.1 for Revit 2026 and 2027.
 2. On the unsigned-add-in security prompt choose **Always Load**; choosing
    "Do Not Load" hides the Revo tab.
-3. Import a scan, run **Scan Analysis**, then open **Generate BIM**.
+3. Import a scan, use the sidebar **2 Analyze scan** stage, then select **3 Generate BIM**.
 4. Click **Create preview** and confirm levels/floors/walls without any model
    change.
 5. Click **Create in Revit**.

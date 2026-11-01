@@ -90,14 +90,14 @@ report contains test evidence.
 - [x] Floor level clustering and closed floor polygons
 - [x] Wall line endpoints, base level and height resolution
 - [x] `reconstruction.plan` JSON-RPC method and typed DTOs
-- [x] Plan preview dialog with no model mutation
+- [x] Plan preview stage inside the single Workspace window
 - [x] Native `Floor.Create` / `Wall.Create` in one transaction
 - [x] Existing level reuse and missing level creation
 - [x] `REVO-INFERRED` mark/comments
 - [x] Transaction rollback on failure
 - [x] Python plan tests and C# contract/integration tests
 - [x] Revit 2026 and 2027 Release builds with zero warnings
-- [x] WPF probe constructs the Generate BIM window
+- [x] WPF probe constructs the Workspace with all stages
 - [ ] Manual floor/wall creation test in Revit 2026
 - [ ] Manual floor/wall creation test in Revit 2027
 - [ ] Phase reviewed and approved

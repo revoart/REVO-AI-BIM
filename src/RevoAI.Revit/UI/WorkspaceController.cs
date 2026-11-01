@@ -65,7 +65,10 @@ public static class WorkspaceController
 
         if (initialize)
         {
-            RunWhenIdle(application, () => _ = _viewModel?.InitializeAsync());
+            // Show() already runs from an Idling callback on Revit's main
+            // thread, so read the document directly instead of raising an
+            // ExternalEvent from inside the Idling event.
+            _viewModel.InitializeFrom(application);
         }
     }
 
@@ -73,28 +76,28 @@ public static class WorkspaceController
     public static void ShowAfterCommand(UIApplication application) =>
         RunWhenIdle(application, () => Show(application));
 
-    /// <summary>Shows the workspace and opens the real point cloud import dialog.</summary>
+    /// <summary>Shows the workspace on the import stage.</summary>
     public static void ImportScan(UIApplication application) =>
         RunWhenIdle(application, () =>
         {
-            Show(application, initialize: false);
-            _viewModel?.BeginImport();
+            Show(application);
+            _viewModel?.ShowImportStage();
         });
 
-    /// <summary>Shows the workspace and runs Scan Analysis for the loaded scan.</summary>
+    /// <summary>Shows the workspace on the Scan Analysis stage.</summary>
     public static void AnalyzeScan(UIApplication application) =>
         RunWhenIdle(application, () =>
         {
             Show(application);
-            _viewModel?.BeginAnalysis();
+            _viewModel?.ShowAnalysisStage();
         });
 
-    /// <summary>Shows the workspace and opens native floor/wall generation.</summary>
+    /// <summary>Shows the workspace on the Generate BIM stage.</summary>
     public static void GenerateBim(UIApplication application) =>
         RunWhenIdle(application, () =>
         {
             Show(application);
-            _viewModel?.BeginGenerateBim();
+            _viewModel?.ShowGenerateStage();
         });
 
     /// <summary>

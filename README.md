@@ -8,9 +8,10 @@ tested and reviewed before the next begins.
 
 > **Current status: Phase 5 - implemented. E57, LAS, LAZ, PLY and XYZ/TXT scans
 > can be imported, analysed into floor/ceiling/wall instances, and converted
-> into a previewable plan for native Revit floors and walls. A real
-> 27.8-million-point E57 import is verified in Revit 2027; native geometry
-> creation and the Scan Analysis UI still need manual in-Revit verification.**
+> into a previewable plan for native Revit floors and walls. Import, analysis
+> and generation are stages in one Workspace window. A real 27.8-million-point
+> E57 import is verified in Revit 2027; native geometry creation and the Scan
+> Analysis UI still need manual in-Revit verification.**
 >
 > This is not a trained neural network and there is no Revit point-cloud preview
 > yet. Generated floors and walls are inferred from a deterministic geometric
@@ -32,9 +33,9 @@ tested and reviewed before the next begins.
 | Unit detection, explicit override and source-coordinate preservation | Done, tested |
 | Outlier removal and voxel downsampling | Done, tested |
 | Chunked point cloud store and spatial queries | Done, tested |
-| Real Import Scan dialog and workspace scan summary | Done, XAML probe passed; in-Revit check pending |
+| Real Import Scan stage and workspace scan summary | Done, XAML probe passed; in-Revit check pending |
 | Geometric floor/ceiling/wall segmentation with confidence | Done, tested with synthetic rooms |
-| Real Scan Analysis dialog and workspace metrics | Done, XAML probe passed; in-Revit check pending |
+| Real Scan Analysis stage and workspace metrics | Done, XAML probe passed; in-Revit check pending |
 | Reconstruction plan with levels, floor polygons and wall lines | Done, tested |
 | Native Revit floor and wall creation with inferred-element marking | Implemented; manual in-Revit check pending |
 | Unit conversion kernel (metres ↔ feet ↔ mm/in/US survey feet) | Done, tested |
@@ -115,10 +116,11 @@ Open **Workspace** to see the project, levels, settings and engine test, or use
 store. Imported scans are not yet drawn in Revit; the workspace reports the
 stored point count, chunk count, bounds and store path. **Scan Analysis** then
 runs the geometric plane baseline and reports detected floors, ceilings and
-walls with plane-fit confidence. **Generate BIM** then previews a plan of native
-floors and walls and creates them in one Revit transaction after confirmation.
-Created elements are marked `REVO-INFERRED`; no geometry is created until the
-user clicks **Create in Revit**.
+walls with plane-fit confidence. Use the sidebar to move through **Import scan →
+Analyze scan → Generate BIM** without leaving the Workspace. Generate BIM
+previews native floors and walls and creates them in one Revit transaction after
+confirmation. Created elements are marked `REVO-INFERRED`; no geometry is created
+until the user clicks **Create in Revit**.
 
 ## Documentation
 

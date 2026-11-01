@@ -21,7 +21,7 @@ no Revit geometry.
 | Plane-fit confidence with explicit meaning | Working, tested |
 | Atomic `analysis/segmentation.json` result | Working, tested |
 | `segmentation.run` / `segmentation.info` JSON-RPC methods | Working, tested |
-| C# Scan Analysis dialog and workspace metrics | Implemented, XAML probe passed |
+| C# Scan Analysis stage and workspace metrics | Implemented, XAML probe passed |
 | Trained ML segmentation | **Not implemented** |
 | Doors, windows, furniture, columns, stairs, curves | **Not classified** |
 | Revit geometry from analysis | **Not implemented** (Phase 5+) |
@@ -97,7 +97,7 @@ the default Scan Analysis settings:
 This is a large multi-level/site scan spanning roughly 125 m x 130 m. Several
 horizontal levels were labelled floor or ceiling from their height, confirming
 the documented multi-storey limitation. The run proves the real engine, storage
-and confidence path; the Scan Analysis dialog still needs a manual UI check.
+and confidence path; the Scan Analysis stage still needs a manual UI check.
 
 ## 4. What is deliberately not claimed
 
@@ -123,7 +123,7 @@ The Revit 2027 import path is verified with a real 27,802,731-point E57 scan
 (21 chunks, colours and intensity). The remaining check is **Scan Analysis**:
 
 1. Start Revit 2026/2027 with 0.4.1 installed.
-2. Import a scan, then open **Scan Analysis**.
+2. Import a scan, then select the sidebar **2 Analyze scan** stage.
 3. Run the defaults and confirm floor/ceiling/wall instances appear with
    confidence.
 4. Confirm the workspace shows detected elements and mean confidence.

@@ -25,7 +25,7 @@ confidence, geometry primitives). The C# side owns every Revit transaction.
 | Project | TFM | Responsibility |
 | --- | --- | --- |
 | `RevoAI.Contracts` | `net8.0` | Wire DTOs, protocol version, error codes, JSON settings. No Revit or Windows dependency, so it is reusable by a future Revit 2025 build. |
-| `RevoAI.Revit` | `net10.0-windows` | Add-in entry point, configuration, logging, engine process client, ribbon, WPF workspace and point cloud import dialog. |
+| `RevoAI.Revit` | `net10.0-windows` | Add-in entry point, configuration, logging, engine process client, ribbon and single-window staged WPF workspace. |
 | `RevoAI.Engine` | Python ≥3.11 | Local processing service: transport, point cloud, spatial queries, segmentation baseline and reconstruction planning. |
 | `RevoAI.Geometry` | Python ≥3.11 | Unit kernel and, in later phases, reconstruction algorithms. |
 
@@ -201,16 +201,16 @@ segmentation.json
   `IExternalCommand` in `Commands/`.
 - Commands that belong to later phases show an explicit TaskDialog; they never
   create placeholder geometry.
-- **Import Scan** opens the modeless workspace and a real import dialog. The
-  dialog sends the file to `pointcloud.import`; it does not draw or invent
-  geometry. The workspace displays the returned metadata.
-- **Scan Analysis** opens the workspace and a real analysis dialog for the
-  imported store. The dialog calls `segmentation.run` and displays segments and
-  confidence.
-- **Generate BIM** opens a plan preview dialog. **Create in Revit** runs
-  `ModelBuilder.Create` through `RevitTaskRunner` in one transaction. It creates
-  native floors and walls and marks them inferred.
-- The modeless `WorkspaceWindow` binds to `WorkspaceViewModel`.
+- The modeless `WorkspaceWindow` binds to `WorkspaceViewModel` and contains the
+  entire scan-to-BIM workflow as stages.
+- `Import scan`, `Analyze scan` and `Generate BIM` are stage views inside that
+  single window, selected from the sidebar or the ribbon. No separate process
+  window is opened.
+- Import sends the file to `pointcloud.import` and displays metadata.
+- Analysis calls `segmentation.run` and displays segments/confidence.
+- Generate previews the plan. **Create in Revit** runs `ModelBuilder.Create`
+  through `RevitTaskRunner` in one transaction and marks created elements
+  inferred.
 - Every Revit API call from the window goes through `RevitTaskRunner`, which
   queues work and raises an `ExternalEvent`. The WPF thread never touches
   `Document`, `Element` or `Transaction`.

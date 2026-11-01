@@ -3,6 +3,26 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.5.1] - 2026-11-01 - Single-window staged workflow
+
+### Changed
+
+- Import, Scan Analysis and Generate BIM are now stages inside the existing
+  Workspace window. The separate process windows are no longer opened.
+- Sidebar stage navigation: Project setup, Import scan, Analyze scan, Generate
+  BIM, with an active-stage indicator.
+- Stage-specific headers, subtitles and continuation buttons.
+- Current scan summary remains visible in the sidebar while working.
+- The workspace project information, levels, diagnostics and engine controls
+  moved into the Project setup stage.
+- Generate BIM and Scan Analysis results remain in the same window for review.
+
+### Verified
+
+- 59 Python tests and 32 .NET tests pass.
+- Revit 2026/2027 Release builds still complete with zero warnings.
+- WPF probe still passes for all windows and icons.
+
 ## [0.5.0] - 2026-11-01 - Phase 5: native walls and floors
 
 ### Added

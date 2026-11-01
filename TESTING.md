@@ -95,7 +95,7 @@ Record the outcome in `docs/phase-1-report.md`.
 
 ## 6. Manual Revit verification (Phases 2–5)
 
-1. Build and install **0.5.0** for Revit 2026 and 2027.
+1. Build and install **0.5.1** for Revit 2026 and 2027.
 2. Restart Revit. If Windows asks about the unsigned add-in, choose **Always
    Load**; choosing "Do Not Load" leaves the Revo tab absent.
 3. Confirm the **REVO AI BIM** tab and all eight controls.
@@ -105,9 +105,10 @@ Record the outcome in `docs/phase-1-report.md`.
 6. Open **Import Scan**, choose a small E57/LAS/PLY/XYZ file and import it.
 7. Confirm the workspace shows the format, unit source, stored point count,
    chunk count, bounds and local store path.
-8. Open **Scan Analysis**, keep the defaults and run it. Confirm segments and
-   confidence, and that `analysis/segmentation.json` exists.
-9. Open **Generate BIM**, keep the defaults and click **Create preview**.
+8. Use the sidebar **2 Analyze scan** stage, keep the defaults and run it.
+   Confirm segments and confidence, and that `analysis/segmentation.json` exists.
+9. Use the sidebar **3 Generate BIM** stage, keep the defaults and click
+   **Create preview**.
 10. Confirm levels, floors and walls appear in the preview with no model
     changes yet.
 11. Click **Create in Revit**. Confirm native floors/walls appear, carry
