@@ -72,6 +72,7 @@ public static class EngineErrorCodes
     public const int InvalidUnit = -32025;
     public const int AnalysisNotFound = -32026;
     public const int PlanInvalid = -32027;
+    public const int AiProviderFailed = -32028;
 }
 
 /// <summary>Base shape of a JSON-RPC 2.0 request.</summary>

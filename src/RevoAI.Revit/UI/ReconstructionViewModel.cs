@@ -21,8 +21,9 @@ public sealed class ReconstructionViewModel : ObservableObject
     private string _fallbackWallHeightText = "2.7";
     private string _levelToleranceText = "0.25";
     private string _maxElementsText = "200";
-    private bool _useExternalPlan;
+    private string _selectedProvider = "Geometric baseline";
     private string _externalPlanPath = string.Empty;
+    private string _astraModelText = "gpt-6-astra";
     private bool _markInferred;
     private string _statusMessage = "Create a plan to preview native floors and walls before building them.";
     private string _errorMessage = string.Empty;
@@ -42,6 +43,13 @@ public sealed class ReconstructionViewModel : ObservableObject
         _confidenceThresholdText = confidenceThreshold.ToString("0.00", CultureInfo.InvariantCulture);
         _markInferred = markInferred;
 
+        ProviderOptions =
+        [
+            "Geometric baseline",
+            "External plan JSON",
+            "GPT-6 Astra (API)",
+        ];
+
         PreviewCommand = new AsyncRelayCommand(PreviewAsync, CanPreview);
         BuildCommand = new RelayCommand(Build, CanBuild);
         OpenStoreFolderCommand = new RelayCommand(OpenStoreFolder, () => Plan is not null);
@@ -59,6 +67,8 @@ public sealed class ReconstructionViewModel : ObservableObject
     public ICommand BuildCommand { get; }
 
     public ICommand OpenStoreFolderCommand { get; }
+
+    public IReadOnlyList<string> ProviderOptions { get; }
 
     public ICommand BrowseExternalPlanCommand { get; }
 
@@ -98,16 +108,33 @@ public sealed class ReconstructionViewModel : ObservableObject
         set => SetProperty(ref _maxElementsText, value);
     }
 
-    public bool UseExternalPlan
+    public string SelectedProvider
     {
-        get => _useExternalPlan;
-        set => SetProperty(ref _useExternalPlan, value);
+        get => _selectedProvider;
+        set
+        {
+            if (SetProperty(ref _selectedProvider, value))
+            {
+                OnPropertyChanged(nameof(IsExternalPlanProvider));
+                OnPropertyChanged(nameof(IsAstraProvider));
+            }
+        }
     }
+
+    public bool IsExternalPlanProvider => SelectedProvider == "External plan JSON";
+
+    public bool IsAstraProvider => SelectedProvider == "GPT-6 Astra (API)";
 
     public string ExternalPlanPath
     {
         get => _externalPlanPath;
         set => SetProperty(ref _externalPlanPath, value);
+    }
+
+    public string AstraModelText
+    {
+        get => _astraModelText;
+        set => SetProperty(ref _astraModelText, value);
     }
 
     public bool MarkInferred
@@ -205,9 +232,15 @@ public sealed class ReconstructionViewModel : ObservableObject
             return;
         }
 
-        if (UseExternalPlan && !File.Exists(ExternalPlanPath))
+        if (IsExternalPlanProvider && !File.Exists(ExternalPlanPath))
         {
             ErrorMessage = "Choose an existing external BIM plan JSON file.";
+            return;
+        }
+
+        if (IsAstraProvider && string.IsNullOrWhiteSpace(AstraModelText))
+        {
+            ErrorMessage = "Enter the GPT-6 Astra model id.";
             return;
         }
 
@@ -256,7 +289,9 @@ public sealed class ReconstructionViewModel : ObservableObject
             var plan = await client.CreateReconstructionPlanAsync(new ReconstructionPlanParams
             {
                 StorePath = StorePath,
-                ExternalPlanPath = UseExternalPlan ? ExternalPlanPath : null,
+                Provider = MapProvider(SelectedProvider),
+                ExternalPlanPath = IsExternalPlanProvider ? ExternalPlanPath : null,
+                AstraModel = AstraModelText.Trim(),
                 ConfidenceThreshold = confidence,
                 FallbackWallHeightMeters = wallHeight,
                 LevelToleranceMeters = tolerance,
@@ -371,7 +406,7 @@ public sealed class ReconstructionViewModel : ObservableObject
         if (dialog.ShowDialog() == true)
         {
             ExternalPlanPath = dialog.FileName;
-            UseExternalPlan = true;
+            SelectedProvider = "External plan JSON";
             StatusMessage = "External plan selected. Create a preview to validate it.";
             ErrorMessage = string.Empty;
         }
@@ -413,6 +448,13 @@ public sealed class ReconstructionViewModel : ObservableObject
             Environment.NewLine +
             $"Plan file: {plan.ResultPath}";
     }
+
+    private static string MapProvider(string label) => label switch
+    {
+        "External plan JSON" => "external",
+        "GPT-6 Astra (API)" => "astra",
+        _ => "geometric",
+    };
 
     private static bool TryParseDouble(string text, out double value) =>
         double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value) ||

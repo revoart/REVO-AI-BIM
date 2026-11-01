@@ -30,6 +30,18 @@ def plan_failed(message: str, *, data: str | None = None) -> PlanError:
     )
 
 
+def provider_failed(message: str, *, data: str | None = None) -> PlanError:
+    return PlanError(
+        ErrorCode.AI_PROVIDER_FAILED,
+        message,
+        data=data,
+        remedy=(
+            "Set OPENAI_API_KEY for the user running Revit and verify network access "
+            "to the OpenAI API."
+        ),
+    )
+
+
 def plan_invalid(message: str, *, data: str | None = None) -> PlanError:
     return PlanError(
         ErrorCode.PLAN_INVALID,

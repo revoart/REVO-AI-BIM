@@ -560,11 +560,18 @@
                                 <TextBlock Text="The store must already contain analysis/segmentation.json from Scan Analysis."
                                            Style="{StaticResource MutedText}" Margin="0,8,0,0" />
 
-                                <CheckBox Content="Use an external AI BIM plan (JSON)"
-                                          IsChecked="{Binding Generate.UseExternalPlan}"
-                                          IsEnabled="{Binding Generate.IsNotBusy}"
-                                          Margin="0,14,0,6" />
-                                <Grid IsEnabled="{Binding Generate.UseExternalPlan}">
+                                <Grid Margin="0,14,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="190" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="PLAN SOURCE" Style="{StaticResource FieldLabel}"
+                                               VerticalAlignment="Center" Margin="0" />
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding Generate.ProviderOptions}"
+                                              SelectedItem="{Binding Generate.SelectedProvider}"
+                                              IsEnabled="{Binding Generate.IsNotBusy}" />
+                                </Grid>
+                                <Grid Visibility="{Binding Generate.IsExternalPlanProvider, Converter={StaticResource BoolToVisibility}}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
@@ -577,7 +584,23 @@
                                             Style="{StaticResource SecondaryButton}" />
                                 </Grid>
                                 <TextBlock Text="The external tool must emit the documented levels/floors/walls JSON schema in metres. The engine validates it before preview."
-                                           Style="{StaticResource MutedText}" Margin="0,6,0,0" />
+                                           Style="{StaticResource MutedText}" Margin="0,6,0,0"
+                                           Visibility="{Binding Generate.IsExternalPlanProvider, Converter={StaticResource BoolToVisibility}}" />
+                                <Grid Visibility="{Binding Generate.IsAstraProvider, Converter={StaticResource BoolToVisibility}}"
+                                      Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="190" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="ASTRA MODEL" Style="{StaticResource FieldLabel}"
+                                               VerticalAlignment="Center" Margin="0" />
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Generate.AstraModelText, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding Generate.IsNotBusy}" />
+                                </Grid>
+                                <TextBlock Text="GPT-6 Astra is called from the local engine using OPENAI_API_KEY. The plan is validated before preview. API usage is billed by OpenAI."
+                                           Style="{StaticResource MutedText}" Margin="0,6,0,0"
+                                           Visibility="{Binding Generate.IsAstraProvider, Converter={StaticResource BoolToVisibility}}" />
 
                                 <Grid Margin="0,16,0,0">
                                     <Grid.ColumnDefinitions>

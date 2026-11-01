@@ -30,6 +30,8 @@ _PLAN_FILE = "reconstruction-plan.json"
 
 def create_plan(params) -> dict[str, Any]:
     started = time.perf_counter()
+    if params.provider == "astra":
+        return _create_astra_plan(params, started)
     if params.external_plan_path:
         return _create_external_plan(params, started)
 
@@ -214,6 +216,76 @@ def _create_external_plan(params, started: float) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise plan_invalid("External plan must be a JSON object.")
 
+    return _normalize_external_plan(
+        payload,
+        store,
+        params,
+        started,
+        source_label=str(source),
+        source_parameters={"externalPlanPath": str(source)},
+    )
+
+
+def _create_astra_plan(params, started: float) -> dict[str, Any]:
+    """Ask GPT-6 Astra for a plan, then run it through the same validator."""
+
+    from .astra import request_astra_plan
+
+    store = PointCloudStore.open(params.store_path)
+    segmentation = load_segmentation(params.store_path)
+    elements = []
+    for element in segmentation.get("elements", []):
+        if float(element.get("confidence", 0.0)) < 0.3:
+            continue
+        elements.append(
+            {
+                "id": element.get("id"),
+                "kind": element.get("kind"),
+                "centroid": element.get("centroid"),
+                "bounds": element.get("bounds"),
+                "areaM2": element.get("areaM2"),
+                "confidence": element.get("confidence"),
+                "boundary": element.get("boundary"),
+            }
+        )
+        if len(elements) >= 80:
+            break
+
+    context = {
+        "scanId": store.metadata.get("scanId", store.path.name),
+        "units": store.metadata.get("units", {}),
+        "bounds": store.metadata.get("bounds", {}),
+        "sourceBounds": store.metadata.get("sourceBounds", {}),
+        "pointCount": store.metadata.get("pointCount", {}),
+        "segmentation": {
+            "method": segmentation.get("method"),
+            "summary": segmentation.get("summary"),
+            "elements": elements,
+        },
+    }
+    payload = request_astra_plan(context, model=params.astra_model)
+    return _normalize_external_plan(
+        payload,
+        store,
+        params,
+        started,
+        source_label=f"openai:{params.astra_model}",
+        source_parameters={
+            "astraModel": params.astra_model,
+            "astraElementCount": len(elements),
+        },
+    )
+
+
+def _normalize_external_plan(
+    payload: dict[str, Any],
+    store: PointCloudStore,
+    params,
+    started: float,
+    *,
+    source_label: str,
+    source_parameters: dict[str, Any],
+) -> dict[str, Any]:
     warnings: list[str] = []
     for unsupported in ("rooms", "openings", "ceilings"):
         if payload.get(unsupported):
@@ -345,16 +417,18 @@ def _create_external_plan(params, started: float) -> dict[str, Any]:
         walls = walls[: max(0, max_elements - len(floors))]
 
     result_path = store.path / _ANALYSIS_DIR / _PLAN_FILE
+    parameters = {
+        **source_parameters,
+        "sourceLabel": source_label,
+        "externalMethod": payload.get("method"),
+        "fallbackWallHeightMeters": fallback_height,
+        "maxElements": max_elements,
+    }
     result = {
         "scanId": store.metadata.get("scanId", store.path.name),
         "storePath": str(store.path),
         "method": EXTERNAL_METHOD,
-        "parameters": {
-            "externalPlanPath": str(source),
-            "externalMethod": payload.get("method"),
-            "fallbackWallHeightMeters": fallback_height,
-            "maxElements": max_elements,
-        },
+        "parameters": parameters,
         "levels": levels,
         "floors": floors,
         "walls": walls,

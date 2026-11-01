@@ -61,6 +61,7 @@ class ErrorCode(IntEnum):
     INVALID_UNIT = -32025
     ANALYSIS_NOT_FOUND = -32026
     PLAN_INVALID = -32027
+    AI_PROVIDER_FAILED = -32028
 
 
 class RpcError(BaseModel):
@@ -448,7 +449,9 @@ class SegmentationResult(CamelModel):
 
 class ReconstructionPlanParams(CamelModel):
     store_path: str = Field(min_length=1)
+    provider: Literal["geometric", "external", "astra"] = "geometric"
     external_plan_path: str | None = None
+    astra_model: str = "gpt-6-astra"
     confidence_threshold: float = 0.75
     fallback_wall_height_meters: float = 2.7
     level_tolerance_meters: float = 0.25

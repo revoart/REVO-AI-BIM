@@ -16,6 +16,9 @@ Semantic Versioning.
 - **Create in Revit** is disabled until a plan preview exists.
 - Generate BIM can consume an external AI plan JSON file, validate it with
   `PLAN_INVALID` (`-32027`), normalize it and preview it before creation.
+- GPT-6 Astra provider calls `gpt-6-astra` from the local engine using
+  `OPENAI_API_KEY`, then validates the returned plan with the same rules. The
+  provider path is mocked-tested; a live call requires an API key.
 - Added the external Claude/Astra BIM plan contract in
   `docs/external-bim-plan.md`.
 - Current scan summary remains visible in the sidebar while working.
@@ -25,7 +28,7 @@ Semantic Versioning.
 
 ### Verified
 
-- 61 Python tests and 32 .NET tests pass.
+- 63 Python tests and 32 .NET tests pass.
 - Revit 2026/2027 Release builds still complete with zero warnings.
 - WPF probe still passes for all windows and icons.
 

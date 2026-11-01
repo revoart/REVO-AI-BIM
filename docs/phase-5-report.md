@@ -17,6 +17,7 @@ Revit is **not yet manually verified**.
 | Wall lines with base level and height | Working, tested |
 | `reconstruction.plan` JSON-RPC method | Working, tested |
 | External AI plan JSON validation (`PLAN_INVALID`) | Working, tested |
+| GPT-6 Astra provider (`gpt-6-astra`, `OPENAI_API_KEY`) | Implemented; mocked tests pass, live API not exercised |
 | Generate BIM preview stage in the Workspace window | Implemented, XAML probe passed |
 | Native Revit `Floor.Create` / `Wall.Create` | Implemented, build-tested; manual check pending |
 | Existing level reuse / missing level creation | Implemented; manual check pending |
@@ -49,7 +50,7 @@ segmentation.json
 
 | Check | Result |
 | --- | --- |
-| Python tests | **61 passed** |
+| Python tests | **63 passed** |
 | .NET tests | **32 passed** |
 | Revit 2026 Release build | **0 warnings, 0 errors** |
 | Revit 2027 Release build | **0 warnings, 0 errors** |
@@ -59,6 +60,8 @@ segmentation.json
 | Real 27.8M-point E57 plan | **2 levels, 3 floors, 0 walls** |
 | External AI plan validation and normalization | **Passed** |
 | Invalid external plan rejected with `PLAN_INVALID` | **Passed** |
+| Astra provider request/response path (mocked) | **Passed** |
+| Missing `OPENAI_API_KEY` rejected with `AI_PROVIDER_FAILED` | **Passed** |
 
 The real scan did not produce a wall instance above the 0.75 confidence
 threshold; the plan therefore contains floors only. That is an honest result,

@@ -12,7 +12,9 @@ public sealed class ReconstructionContractTests
         var parameters = new ReconstructionPlanParams
         {
             StorePath = @"C:\scans\store",
+            Provider = "external",
             ExternalPlanPath = @"C:\scans\external-plan.json",
+            AstraModel = "gpt-6-astra",
             MaxElements = 25,
         };
 
@@ -20,7 +22,9 @@ public sealed class ReconstructionContractTests
         var root = document.RootElement;
 
         Assert.Equal(@"C:\scans\store", root.GetProperty("storePath").GetString());
+        Assert.Equal("external", root.GetProperty("provider").GetString());
         Assert.Equal(@"C:\scans\external-plan.json", root.GetProperty("externalPlanPath").GetString());
+        Assert.Equal("gpt-6-astra", root.GetProperty("astraModel").GetString());
         Assert.Equal(0.75, root.GetProperty("confidenceThreshold").GetDouble());
         Assert.Equal(2.7, root.GetProperty("fallbackWallHeightMeters").GetDouble());
         Assert.Equal(0.25, root.GetProperty("levelToleranceMeters").GetDouble());

@@ -166,9 +166,12 @@ segmentation.json
 ```
 
 - Plan creation is read-only. It writes JSON beside the scan.
-- The plan can come from the built-in geometric baseline or from an external AI
-  tool's JSON file. External plans are bounds-checked against the scan and
-  normalized before preview; they are never executed directly.
+- The plan can come from the built-in geometric baseline, an external JSON file,
+  or the GPT-6 Astra provider. External/Astra plans are bounds-checked against
+  the scan and normalized before preview; they are never executed directly.
+- Astra uses the OpenAI Chat Completions JSON schema response format and
+  `OPENAI_API_KEY` from the engine process environment. The key is never logged
+  or written to the plan.
 - Floors use ordered plane boundaries from segmentation; the current boundary
   is a convex hull, so concave spaces are simplified.
 - Walls use the longest boundary extent as a line. The base level is the nearest

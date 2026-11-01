@@ -100,6 +100,12 @@ This file is deliberately blunt. Anything listed here is **not working** or
 22. **Nearest-neighbour search is not exposed over JSON-RPC.** It is implemented
     and tested in `PointCloudStore.nearest`, but `pointcloud.query` currently
     supports bounds, radius and sample modes only.
+23. **GPT-6 Astra sends scan context to OpenAI.** The provider sends scan
+    metadata, summary and high-confidence segment geometry. Use it only with
+    permission for the data and an appropriate agreement. The API key is read
+    from `OPENAI_API_KEY`; it is not stored by Revo.
+24. **The Astra provider has mocked tests, not a live API test.** A real call
+    requires an account, key and network access; its cost is billed by OpenAI.
 
 ## Honesty rules for future phases
 

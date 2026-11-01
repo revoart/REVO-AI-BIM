@@ -17,6 +17,7 @@ from revoai_engine.protocol import (
     SegmentationRunParams,
 )
 from revoai_engine.reconstruction import PlanError, create_plan
+from revoai_engine.reconstruction.astra import request_astra_plan
 from revoai_engine.service import EngineState, dispatch
 
 
@@ -322,6 +323,72 @@ def test_external_ai_plan_rejects_invalid_geometry(tmp_path: Path) -> None:
         )
 
     assert error.value.code == ErrorCode.PLAN_INVALID
+
+
+def test_astra_provider_plan_is_validated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    imported = _import_room(tmp_path, name="astra-room")
+    run_segmentation(
+        SegmentationRunParams(
+            store_path=imported["storePath"],
+            voxel_size_meters=0.0,
+            max_points=10_000,
+            plane_distance_meters=0.01,
+            min_plane_points=100,
+            max_planes=20,
+        )
+    )
+
+    def fake_request(context, *, model, **kwargs):
+        assert context["scanId"] == imported["scanId"]
+        assert model == "gpt-6-astra"
+        return {
+            "method": "astra-test",
+            "levels": [{"id": "L1", "name": "Level 1", "elevationMeters": 0.0}],
+            "floors": [
+                {
+                    "id": "F1",
+                    "levelId": "L1",
+                    "boundary": [[0, 0, 0], [4, 0, 0], [4, 3, 0], [0, 3, 0]],
+                    "confidence": 0.9,
+                }
+            ],
+            "walls": [
+                {
+                    "id": "W1",
+                    "levelId": "L1",
+                    "start": [0, 0, 0],
+                    "end": [4, 0, 0],
+                    "heightMeters": 2.7,
+                    "confidence": 0.85,
+                }
+            ],
+        }
+
+    monkeypatch.setattr(
+        "revoai_engine.reconstruction.astra.request_astra_plan",
+        fake_request,
+    )
+
+    result = create_plan(
+        ReconstructionPlanParams(
+            store_path=imported["storePath"],
+            provider="astra",
+            astra_model="gpt-6-astra",
+        )
+    )
+
+    assert result["method"] == "external-bim-plan/1"
+    assert result["parameters"]["sourceLabel"] == "openai:gpt-6-astra"
+    assert len(result["levels"]) == 1
+    assert len(result["floors"]) == 1
+    assert len(result["walls"]) == 1
+
+
+def test_astra_provider_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    with pytest.raises(PlanError) as error:
+        request_astra_plan({"scanId": "test"})
+    assert error.value.code == ErrorCode.AI_PROVIDER_FAILED
 
 
 def test_segmentation_not_found_is_typed(tmp_path: Path) -> None:

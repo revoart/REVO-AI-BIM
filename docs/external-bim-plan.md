@@ -1,11 +1,17 @@
 # External BIM Plan Contract
 
 Revo AI BIM can consume a floor/wall plan produced by an external AI tool
-(Claude, Astra 6, or a custom model) instead of the built-in geometric baseline.
+(Claude, GPT-6 Astra, or a custom model) instead of the built-in geometric
+baseline.
 
-This is a **file contract**, not a live API connection. The external tool writes
-one JSON file; Revo validates it, writes a normalized copy beside the scan, shows
-it in the Generate BIM stage, and only then can the user create Revit geometry.
+There are two integration modes:
+
+1. **File contract** — the external tool writes one JSON file. Revo validates it,
+   writes a normalized copy beside the scan, shows it in Generate BIM, and only
+   then can the user create Revit geometry.
+2. **GPT-6 Astra provider** — the local engine calls the OpenAI Responses/Chat
+   Completions API with `gpt-6-astra`, receives the same JSON shape, validates it,
+   and shows the same preview. The API key stays in the engine process environment.
 
 ## Workflow
 
@@ -23,6 +29,25 @@ The normalized plan is written to:
 ```
 <scan store>/analysis/reconstruction-plan.json
 ```
+
+## GPT-6 Astra provider
+
+1. Set `OPENAI_API_KEY` for the Windows user that runs Revit, then restart Revit
+   so the Python child process inherits it.
+2. Open **Generate BIM**.
+3. Set **PLAN SOURCE** to **GPT-6 Astra (API)**.
+4. Keep the model id `gpt-6-astra` or enter the exact model id required by the
+   account.
+5. Click **Create preview**.
+
+The engine sends the scan metadata, summary and high-confidence segmentation
+elements to the model, requests the documented JSON schema, then runs the same
+bounds/geometry validation as a file plan. If validation fails, no Revit geometry
+is created.
+
+The key is read from the process environment. It is not written to config, logs
+or the plan file. API usage is billed by OpenAI; the default model pricing at the
+time of writing is on the OpenAI API pricing page.
 
 ## JSON schema
 
@@ -85,6 +110,13 @@ The normalized plan is written to:
 
 ## Validation
 
+The engine returns `AI_PROVIDER_FAILED` (`-32028`) when:
+
+- `OPENAI_API_KEY` is missing from the engine environment.
+- The OpenAI API is unreachable or times out.
+- OpenAI returns a non-success HTTP status.
+- The model does not return valid JSON.
+
 The engine rejects a plan with `PLAN_INVALID` (`-32027`) when:
 
 - JSON is malformed or not an object.
@@ -110,10 +142,14 @@ Do not provide customer scans to an external service without written permission.
 
 ## Current limitations
 
-- The external AI is not called directly by Revo yet; the JSON file is the
-  integration boundary.
+- GPT-6 Astra is available through the engine provider; Claude remains a file
+  contract until its API adapter is added.
+- The Astra provider sends scan context to OpenAI. Do not enable it for customer
+  scans without written permission and an appropriate data agreement.
 - Only levels, floors and walls are created. Rooms, doors, windows, ceilings,
   stairs and curved surfaces are not yet mapped to Revit.
 - External output is not dimensional-accuracy proof. The user must review it.
 - The external model's confidence is recorded verbatim; it is not a measured
   accuracy guarantee.
+- Astra API calls can be slow and are billed per token. The request timeout is
+  deliberately finite; a failure does not modify the model.

@@ -123,9 +123,9 @@ confirmation. Created elements are marked `REVO-INFERRED`; no geometry is create
 until the user clicks **Create in Revit**.
 
 The Generate BIM stage can also validate and consume a JSON plan produced by an
-external AI tool such as Claude or Astra 6. See
-[docs/external-bim-plan.md](docs/external-bim-plan.md). That integration is
-file-based today; Revo does not call an external model itself.
+external AI tool such as Claude or GPT-6 Astra. GPT-6 Astra can be called
+directly from the local engine using `OPENAI_API_KEY`; Claude currently uses the
+file contract. See [docs/external-bim-plan.md](docs/external-bim-plan.md).
 
 ## Documentation
 

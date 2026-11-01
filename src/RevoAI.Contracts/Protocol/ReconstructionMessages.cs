@@ -7,8 +7,13 @@ public sealed class ReconstructionPlanParams
 {
     public required string StorePath { get; init; }
 
+    /// <summary>geometric, external or astra.</summary>
+    public string Provider { get; init; } = "geometric";
+
     /// <summary>Optional JSON plan produced by an external AI tool.</summary>
     public string? ExternalPlanPath { get; init; }
+
+    public string AstraModel { get; init; } = "gpt-6-astra";
 
     public double ConfidenceThreshold { get; init; } = 0.75;
 
