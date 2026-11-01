@@ -19,10 +19,14 @@ from typing import Any, TextIO
 from pydantic import ValidationError
 
 from . import __version__
+from .pointcloud import PointCloudError, PointCloudStore, import_point_cloud
 from .protocol import (
     CAPABILITIES,
     METHOD_INITIALIZE,
     METHOD_PING,
+    METHOD_POINTCLOUD_IMPORT,
+    METHOD_POINTCLOUD_INFO,
+    METHOD_POINTCLOUD_QUERY,
     METHOD_SHUTDOWN,
     PROTOCOL_VERSION,
     ErrorCode,
@@ -30,6 +34,12 @@ from .protocol import (
     InitializeResult,
     PingParams,
     PingResult,
+    PointCloudImportParams,
+    PointCloudImportResult,
+    PointCloudInfoParams,
+    PointCloudInfoResult,
+    PointCloudQueryParams,
+    PointCloudQueryResult,
     RpcRequest,
     RpcResponse,
     ShutdownResult,
@@ -173,6 +183,153 @@ def dispatch(state: EngineState, request: RpcRequest) -> RpcResponse | None:
             ErrorCode.NOT_INITIALIZED,
             "The engine has not been initialized.",
             remedy="Call 'initialize' before any processing request.",
+        )
+
+    if request.method == METHOD_POINTCLOUD_IMPORT:
+        try:
+            params = PointCloudImportParams.model_validate(request.params or {})
+        except ValidationError as exc:
+            return error_response(
+                request.id,
+                ErrorCode.INVALID_PARAMS,
+                "Invalid point cloud import parameters.",
+                data=str(exc),
+            )
+
+        try:
+            result = import_point_cloud(params)
+        except PointCloudError as exc:
+            return error_response(
+                request.id,
+                exc.code,
+                exc.message,
+                data=exc.data,
+                remedy=exc.remedy,
+            )
+
+        LOG.info(
+            "Imported %s (%s) as %s: %s points in %s chunk(s) at %s",
+            result["sourcePath"],
+            result["format"],
+            result["scanId"],
+            result["pointCount"]["stored"],
+            result["chunkCount"],
+            result["storePath"],
+        )
+        validated = PointCloudImportResult.model_validate(result)
+        return RpcResponse(
+            id=request.id,
+            result=validated.model_dump(by_alias=True),
+        )
+
+    if request.method == METHOD_POINTCLOUD_INFO:
+        try:
+            params = PointCloudInfoParams.model_validate(request.params or {})
+        except ValidationError as exc:
+            return error_response(
+                request.id,
+                ErrorCode.INVALID_PARAMS,
+                "Invalid point cloud info parameters.",
+                data=str(exc),
+            )
+
+        try:
+            store = PointCloudStore.open(params.store_path)
+        except PointCloudError as exc:
+            return error_response(
+                request.id,
+                exc.code,
+                exc.message,
+                data=exc.data,
+                remedy=exc.remedy,
+            )
+
+        metadata = store.info()
+        units = metadata.get("units", {})
+        result = PointCloudInfoResult(
+            scan_id=metadata["scanId"],
+            store_path=str(store.path),
+            source_path=metadata["source"]["path"],
+            format=metadata["source"]["format"],
+            unit=units.get("source", "meters"),
+            unit_source=units.get("sourceOrigin", "assumed"),
+            point_count=metadata["pointCount"],
+            bounds=metadata["bounds"],
+            source_bounds=metadata["sourceBounds"],
+            chunk_count=int(metadata["storage"]["chunkCount"]),
+            attributes=list(metadata.get("attributes", [])),
+            warnings=list(metadata.get("warnings", [])),
+            created_at=metadata["createdAt"],
+            engine_version=metadata.get("engineVersion", __version__),
+        )
+        return RpcResponse(
+            id=request.id,
+            result=result.model_dump(by_alias=True),
+        )
+
+    if request.method == METHOD_POINTCLOUD_QUERY:
+        try:
+            params = PointCloudQueryParams.model_validate(request.params or {})
+        except ValidationError as exc:
+            return error_response(
+                request.id,
+                ErrorCode.INVALID_PARAMS,
+                "Invalid point cloud query parameters.",
+                data=str(exc),
+            )
+
+        try:
+            store = PointCloudStore.open(params.store_path)
+            if params.bounds is not None:
+                raw = store.query_bounds(
+                    params.bounds.min,
+                    params.bounds.max,
+                    max_points=params.max_points,
+                    include_colors=params.include_colors,
+                    include_intensity=params.include_intensity,
+                )
+            elif params.center is not None and params.radius is not None:
+                raw = store.query_radius(
+                    params.center,
+                    params.radius,
+                    max_points=params.max_points,
+                    include_colors=params.include_colors,
+                    include_intensity=params.include_intensity,
+                )
+            else:
+                raw = store.sample(
+                    params.max_points,
+                    include_colors=params.include_colors,
+                    include_intensity=params.include_intensity,
+                )
+        except PointCloudError as exc:
+            return error_response(
+                request.id,
+                exc.code,
+                exc.message,
+                data=exc.data,
+                remedy=exc.remedy,
+            )
+
+        result = PointCloudQueryResult(
+            positions=raw["positions"].tolist(),
+            count=int(raw["count"]),
+            returned=int(raw["returned"]),
+            truncated=bool(raw["truncated"]),
+            colors=(
+                raw["colors"].astype(int).tolist()
+                if raw["colors"] is not None
+                else None
+            ),
+            intensity=(
+                raw["intensity"].astype(float).tolist()
+                if raw["intensity"] is not None
+                else None
+            ),
+        )
+        return RpcResponse(
+            id=request.id,
+            result=result.model_dump(by_alias=True, exclude_none=True),
         )
 
     return error_response(

@@ -41,6 +41,29 @@ report contains test evidence.
 - [ ] Manual ribbon/workspace test in Revit 2027
 - [ ] Phase reviewed and approved
 
-## Phases 3–10
+## Phase 3 — Point cloud engine
+
+- [x] E57 reader with multi-scan pose transforms
+- [x] LAS and LAZ reader
+- [x] PLY reader (ASCII and binary)
+- [x] XYZ/TXT reader
+- [x] Source unit detection, explicit override and metre conversion
+- [x] Source bounds preserved in source units
+- [x] Statistical outlier removal
+- [x] Voxel downsampling
+- [x] Chunked store with 3D grid index and metadata
+- [x] Bounds, radius, nearest and sample queries
+- [x] JSON-RPC import/info/query methods and typed errors
+- [x] C# DTOs, engine client methods and real import dialog
+- [x] Workspace scan summary
+- [x] Python tests for every supported format and query type
+- [x] Real C# ↔ Python import/info/query integration test
+- [x] Revit 2026 and 2027 Release builds with zero warnings
+- [x] WPF probe constructs workspace, import, settings and about windows
+- [ ] Manual import test in Revit 2026
+- [ ] Manual import test in Revit 2027
+- [ ] Phase reviewed and approved
+
+## Phases 4–10
 
 Not started. See `ROADMAP.md`.

@@ -6,4 +6,5 @@ numpy>=2.0,<3
 scipy>=1.14
 laspy>=2.6
 lazrs>=0.7
+pye57>=0.4.19
 pydantic>=2.9,<3

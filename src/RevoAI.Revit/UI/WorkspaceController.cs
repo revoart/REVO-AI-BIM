@@ -48,6 +48,13 @@ public static class WorkspaceController
         _ = _viewModel.InitializeAsync();
     }
 
+    /// <summary>Shows the workspace and opens the real point cloud import dialog.</summary>
+    public static void ImportScan(UIApplication application)
+    {
+        Show(application);
+        _viewModel?.BeginImport();
+    }
+
     public static void Close()
     {
         try

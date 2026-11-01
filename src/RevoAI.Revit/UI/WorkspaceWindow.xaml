@@ -33,7 +33,7 @@
                     <Border Height="1" Background="#33FFFFFF" Margin="0,18,0,18" />
                     <TextBlock Text="SCAN TO BIM" Foreground="#8A94A6" FontSize="11" FontWeight="SemiBold" />
                     <Border Background="#22FFFFFF" CornerRadius="4" Padding="8,4" Margin="0,10,0,0" HorizontalAlignment="Left">
-                        <TextBlock Text="PHASE 2 · WORKSPACE" Foreground="#C9D1DE" FontSize="10" FontWeight="SemiBold" />
+                        <TextBlock Text="PHASE 3 · POINT CLOUD" Foreground="#C9D1DE" FontSize="10" FontWeight="SemiBold" />
                     </Border>
                 </StackPanel>
 
@@ -141,7 +141,7 @@
                                 <TextBlock Text="Point cloud" Style="{StaticResource SectionTitle}" Margin="0,0,0,14" />
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="2*" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
@@ -158,6 +158,34 @@
                                         <TextBlock Text="{Binding ScanStatus}" Style="{StaticResource FieldValue}" />
                                     </StackPanel>
                                 </Grid>
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="FORMAT" Style="{StaticResource FieldLabel}" />
+                                        <TextBlock Text="{Binding ScanFormat}" Style="{StaticResource FieldValue}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="UNIT" Style="{StaticResource FieldLabel}" />
+                                        <TextBlock Text="{Binding ScanUnit}" Style="{StaticResource FieldValue}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="CHUNKS" Style="{StaticResource FieldLabel}" />
+                                        <TextBlock Text="{Binding ScanChunks}" Style="{StaticResource FieldValue}" />
+                                    </StackPanel>
+                                </Grid>
+                                <StackPanel>
+                                    <TextBlock Text="BOUNDS (M)" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock Text="{Binding ScanBounds}" Style="{StaticResource FieldValue}" />
+                                    <TextBlock Text="LOCAL STORE" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock Text="{Binding ScanStorePath}" Style="{StaticResource FieldValue}"
+                                               ToolTip="{Binding ScanStorePath}" />
+                                    <TextBlock Text="{Binding ScanWarnings}" Style="{StaticResource MutedText}"
+                                               Margin="0,0,0,4" />
+                                </StackPanel>
                             </StackPanel>
                             <Button Grid.Column="1" Content="Import scan"
                                     Command="{Binding ImportScanCommand}"
@@ -319,7 +347,7 @@
                     BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
                     Padding="28,10">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Right" Text="Phase 2 · no scan processing yet"
+                    <TextBlock DockPanel.Dock="Right" Text="Phase 3 · point cloud import and spatial index"
                                Foreground="{StaticResource MutedBrush}" FontSize="11" />
                     <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource MutedBrush}"
                                FontSize="11" TextTrimming="CharacterEllipsis" />

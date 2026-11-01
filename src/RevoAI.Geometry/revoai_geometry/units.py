@@ -14,6 +14,7 @@ from enum import Enum
 
 METERS_PER_FOOT = 0.3048
 METERS_PER_INCH = 0.0254
+METERS_PER_US_SURVEY_FOOT = 1200.0 / 3937.0
 
 
 class UnitSystem(str, Enum):
@@ -22,6 +23,7 @@ class UnitSystem(str, Enum):
     METERS = "meters"
     INCHES = "inches"
     FEET = "feet"
+    US_SURVEY_FEET = "usSurveyFeet"
 
 
 METERS_PER_UNIT: dict[UnitSystem, float] = {
@@ -30,6 +32,7 @@ METERS_PER_UNIT: dict[UnitSystem, float] = {
     UnitSystem.METERS: 1.0,
     UnitSystem.INCHES: METERS_PER_INCH,
     UnitSystem.FEET: METERS_PER_FOOT,
+    UnitSystem.US_SURVEY_FEET: METERS_PER_US_SURVEY_FOOT,
 }
 
 #: Revit's internal length unit.
@@ -57,6 +60,11 @@ _ALIASES: dict[str, UnitSystem] = {
     "ft": UnitSystem.FEET,
     "foot": UnitSystem.FEET,
     "feet": UnitSystem.FEET,
+    "us survey foot": UnitSystem.US_SURVEY_FEET,
+    "us survey feet": UnitSystem.US_SURVEY_FEET,
+    "ussurveyfeet": UnitSystem.US_SURVEY_FEET,
+    "usft": UnitSystem.US_SURVEY_FEET,
+    "ftus": UnitSystem.US_SURVEY_FEET,
 }
 
 

@@ -3,6 +3,51 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.3.0] - 2026-11-01 — Phase 3: point cloud engine
+
+### Added
+
+- E57, LAS, LAZ, PLY and XYZ/TXT point cloud readers.
+- E57 multi-scan import with pose transforms applied by `pye57`.
+- Source unit resolution and explicit override, including US survey feet.
+- Source bounds preserved in source units alongside metre bounds.
+- Optional statistical outlier removal and voxel downsampling.
+- Chunked NPZ point cloud store with float64 chunk origins, float32 offsets and
+  a 3D grid index in `metadata.json`.
+- Bounds, radius, nearest-neighbour and sample queries that open only candidate
+  chunks.
+- JSON-RPC `pointcloud.import`, `pointcloud.info` and `pointcloud.query`.
+- Typed point cloud error codes and remedies.
+- C# point cloud DTOs, `PythonEngineClient` methods and real import dialog.
+- Workspace point cloud summary: format, unit source, points, chunks, bounds and
+  local store path.
+- Ribbon **Import Scan** now opens the real import dialog.
+- Python tests for every format, units, preprocessing, storage, queries and the
+  service protocol; C# contract and real-engine integration tests.
+
+### Changed
+
+- Product version 0.3.0; engine package version 0.3.0.
+- `requirements.in`/lock include `pye57` and `pyquaternion`.
+- Protocol `initialize.capabilities` now advertises the three point cloud
+  methods.
+
+### Verified
+
+- 54 Python tests and 27 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs workspace, import, settings and about windows.
+- Real C# → Python import/info/query integration test passes.
+
+### Known gaps
+
+- Manual in-Revit verification of Phases 2 and 3 is pending.
+- RCP/RCS import, import streaming, cancellation/progress and CRS reprojection
+  are not implemented.
+- Nearest-neighbour search is tested at store level but not exposed over
+  JSON-RPC.
+- No Revit point-cloud preview or BIM geometry yet.
+
 ## [0.2.0] - 2026-10-31 — Phase 2: Revit plugin interface
 
 ### Added

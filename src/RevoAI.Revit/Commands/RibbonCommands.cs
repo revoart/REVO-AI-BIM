@@ -22,13 +22,11 @@ public sealed class WorkspaceCommand : RevoCommandBase
 [Regeneration(RegenerationOption.Manual)]
 public sealed class ImportScanCommand : RevoCommandBase
 {
-    protected override Result ExecuteCore(ExternalCommandData commandData) =>
-        PhaseMessages.Show(
-            "Import Scan",
-            "Point cloud import is implemented in Phase 3.\n\n" +
-            "Supported formats will be added only after they are tested: E57, LAS/LAZ, PLY, XYZ, " +
-            "and RCP/RCS through a verified Autodesk workflow.\n\n" +
-            "Open the Workspace to see the project, levels and engine diagnostics that are available today.");
+    protected override Result ExecuteCore(ExternalCommandData commandData)
+    {
+        WorkspaceController.ImportScan(commandData.Application);
+        return Result.Succeeded;
+    }
 }
 
 [Transaction(TransactionMode.Manual)]
@@ -38,8 +36,9 @@ public sealed class ScanAnalysisCommand : RevoCommandBase
     protected override Result ExecuteCore(ExternalCommandData commandData) =>
         PhaseMessages.Show(
             "Scan Analysis",
-            "Scan preprocessing and AI classification are implemented in Phases 3 and 4.\n\n" +
-            "No scan data is loaded and no analysis is performed in this build.");
+            "Scans can be imported in Phase 3, but semantic and instance analysis " +
+            "arrives in Phase 4.\n\nNo scan is analyzed and no model geometry is created " +
+            "in this build.");
 }
 
 [Transaction(TransactionMode.Manual)]

@@ -39,6 +39,9 @@ public static class EngineMethods
     public const string Initialize = "initialize";
     public const string Ping = "ping";
     public const string Shutdown = "shutdown";
+    public const string PointCloudImport = "pointcloud.import";
+    public const string PointCloudInfo = "pointcloud.info";
+    public const string PointCloudQuery = "pointcloud.query";
 }
 
 /// <summary>
@@ -57,6 +60,13 @@ public static class EngineErrorCodes
     public const int NotInitialized = -32011;
     public const int EngineUnavailable = -32012;
     public const int OperationCancelled = -32013;
+
+    public const int FileNotFound = -32020;
+    public const int UnsupportedFormat = -32021;
+    public const int InvalidPointCloud = -32022;
+    public const int ProcessingFailed = -32023;
+    public const int StoreNotFound = -32024;
+    public const int InvalidUnit = -32025;
 }
 
 /// <summary>Base shape of a JSON-RPC 2.0 request.</summary>

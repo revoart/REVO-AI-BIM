@@ -39,7 +39,7 @@ try {
     & $python -m pip install -r requirements-dev.in --disable-pip-version-check
     & $python -m pip install -e src\RevoAI.Engine -e src\RevoAI.Geometry --disable-pip-version-check
 
-    & $python -c "import revoai_engine, revoai_geometry, open3d, numpy, scipy, laspy; print('Python imports OK:', revoai_engine.__version__, revoai_geometry.__version__, 'open3d', open3d.__version__)"
+    & $python -c "import revoai_engine, revoai_geometry, open3d, numpy, scipy, laspy, pye57; print('Python imports OK:', revoai_engine.__version__, revoai_geometry.__version__, 'open3d', open3d.__version__, 'pye57', pye57.__version__)"
 
     if (-not $SkipBuild) {
         Write-Host "Building .NET solution for Revit $RevitVersion..."

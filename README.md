@@ -6,13 +6,13 @@ Revo AI BIM converts laser-scanned buildings into editable, native Revit
 elements. The product is built in ten gated phases; each phase is implemented,
 tested and reviewed before the next begins.
 
-> **Current status: Phase 2 (Revit plugin interface) — implemented. The ribbon,
-> workspace, settings and engine diagnostics build and pass automated checks.
-> Manual in-Revit verification of the ribbon is pending. Point cloud import, AI
-> and BIM generation are still not implemented.**
+> **Current status: Phase 3 (point cloud engine) — implemented. E57, LAS, LAZ,
+> PLY and XYZ/TXT scans can be imported into a chunked local store, preprocessed
+> and queried. The ribbon, workspace and import dialog build and pass automated
+> checks. Manual in-Revit verification of Phases 2–3 is pending.**
 >
-> There is no point cloud import, AI detection, or BIM generation yet. Nothing
-> in this repository claims otherwise.
+> There is no AI detection, BIM reconstruction or Revit point-cloud preview yet.
+> Nothing in this repository claims otherwise.
 
 ## What exists today
 
@@ -26,9 +26,14 @@ tested and reviewed before the next begins.
 | Native Revit level creation (transaction + ExternalEvent) | Done, builds; in-Revit check pending |
 | C# ↔ Python engine protocol (JSON-RPC 2.0 over stdio) | Done, tested end to end |
 | Python engine process (`initialize`, `ping`, `shutdown`) | Done, tested |
-| Unit conversion kernel (metres ↔ feet ↔ mm/in) | Done, tested |
+| E57 / LAS / LAZ / PLY / XYZ point cloud import | Done, tested with synthetic files |
+| Unit detection, explicit override and source-coordinate preservation | Done, tested |
+| Outlier removal and voxel downsampling | Done, tested |
+| Chunked point cloud store and spatial queries | Done, tested |
+| Real Import Scan dialog and workspace scan summary | Done, XAML probe passed; in-Revit check pending |
+| Unit conversion kernel (metres ↔ feet ↔ mm/in/US survey feet) | Done, tested |
 | Structured logging, configuration, error model | Done |
-| Scan import, AI, reconstruction | **Not started** |
+| AI detection, BIM reconstruction, Revit preview | **Not started** |
 
 ## Repository layout
 
@@ -40,8 +45,8 @@ revo-ai-bim/
 │  ├─ RevoAI.Engine/        Python engine package (revoai_engine)
 │  └─ RevoAI.Geometry/      Python geometry package (revoai_geometry)
 ├─ tests/
-│  ├─ RevoAI.Revit.Tests/   xUnit: protocol, config, real engine process
-│  ├─ RevoAI.Engine.Tests/  pytest: protocol, dispatch, stdio round trip
+│  ├─ RevoAI.Revit.Tests/   xUnit: protocol, config, real engine process, point cloud client
+│  ├─ RevoAI.Engine.Tests/  pytest: protocol, dispatch, stdio round trip, point cloud
 │  └─ RevoAI.Geometry.Tests/pytest: unit conversions
 ├─ docs/                    Architecture, ADRs, environment, phase report
 ├─ scripts/                 Bootstrap, build, test, add-in install, smoke test
@@ -97,7 +102,10 @@ Install the developer add-in:
 
 Then start Revit: the **REVO AI BIM** tab appears with Workspace, Import Scan,
 Scan Analysis, Generate BIM, Model Review, Quality Check, Settings and About.
-Open **Workspace** to see the project, levels, settings and engine test.
+Open **Workspace** to see the project, levels, settings and engine test, or use
+**Import Scan** to import an E57, LAS/LAZ, PLY or XYZ file into a local chunked
+store. Imported scans are not yet drawn in Revit; the workspace reports the
+stored point count, chunk count, bounds and store path.
 
 ## Documentation
 
@@ -108,6 +116,7 @@ Open **Workspace** to see the project, levels, settings and engine test.
 - [docs/environment.md](docs/environment.md) — inspected machine facts
 - [docs/phase-1-report.md](docs/phase-1-report.md) - Phase 1 completion report
 - [docs/phase-2-report.md](docs/phase-2-report.md) - Phase 2 completion report
+- [docs/phase-3-report.md](docs/phase-3-report.md) - Phase 3 completion report
 - [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) — what does not work yet
 
 ## License

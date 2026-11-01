@@ -7,10 +7,11 @@ major version before any processing request is accepted.
 
 from __future__ import annotations
 
+import re
 from enum import IntEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 
 PROTOCOL_VERSION = "1.0"
@@ -18,8 +19,18 @@ PROTOCOL_VERSION = "1.0"
 METHOD_INITIALIZE = "initialize"
 METHOD_PING = "ping"
 METHOD_SHUTDOWN = "shutdown"
+METHOD_POINTCLOUD_IMPORT = "pointcloud.import"
+METHOD_POINTCLOUD_INFO = "pointcloud.info"
+METHOD_POINTCLOUD_QUERY = "pointcloud.query"
 
-CAPABILITIES = (METHOD_INITIALIZE, METHOD_PING, METHOD_SHUTDOWN)
+CAPABILITIES = (
+    METHOD_INITIALIZE,
+    METHOD_PING,
+    METHOD_SHUTDOWN,
+    METHOD_POINTCLOUD_IMPORT,
+    METHOD_POINTCLOUD_INFO,
+    METHOD_POINTCLOUD_QUERY,
+)
 
 
 class ErrorCode(IntEnum):
@@ -35,6 +46,13 @@ class ErrorCode(IntEnum):
     NOT_INITIALIZED = -32011
     ENGINE_UNAVAILABLE = -32012
     OPERATION_CANCELLED = -32013
+
+    FILE_NOT_FOUND = -32020
+    UNSUPPORTED_FORMAT = -32021
+    INVALID_POINT_CLOUD = -32022
+    PROCESSING_FAILED = -32023
+    STORE_NOT_FOUND = -32024
+    INVALID_UNIT = -32025
 
 
 class RpcError(BaseModel):
@@ -103,6 +121,198 @@ class PingResult(CamelModel):
 
 class ShutdownResult(CamelModel):
     ok: bool
+
+
+class Bounds3(CamelModel):
+    min: list[float]
+    max: list[float]
+
+    @field_validator("min", "max")
+    @classmethod
+    def _three_components(cls, value: list[float]) -> list[float]:
+        if len(value) != 3:
+            raise ValueError("Bounds must contain exactly three components.")
+        return value
+
+
+class PointCounts(CamelModel):
+    original: int
+    valid: int
+    after_outlier_removal: int
+    after_downsampling: int
+    stored: int
+
+
+class PointCloudImportParams(CamelModel):
+    path: str = Field(min_length=1)
+    format: str | None = None
+    unit: str = "auto"
+    output_directory: str = Field(min_length=1)
+    scan_id: str | None = None
+    chunk_size_meters: float = 25.0
+    voxel_size_meters: float | None = None
+    remove_outliers: bool = False
+    outlier_neighbors: int = 20
+    outlier_std_ratio: float = 2.0
+    overwrite: bool = False
+
+    @field_validator("format")
+    @classmethod
+    def _normalise_format(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().lower().lstrip(".")
+        return cleaned or None
+
+    @field_validator("unit")
+    @classmethod
+    def _normalise_unit(cls, value: str) -> str:
+        cleaned = value.strip().lower()
+        allowed = {
+            "auto",
+            "millimeters",
+            "centimeters",
+            "meters",
+            "inches",
+            "feet",
+            "ussurveyfeet",
+        }
+        if cleaned not in allowed:
+            raise ValueError(
+                "unit must be auto, millimeters, centimeters, meters, inches, feet "
+                "or usSurveyFeet"
+            )
+        return cleaned
+
+    @field_validator("scan_id")
+    @classmethod
+    def _validate_scan_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", cleaned):
+            raise ValueError(
+                "scanId must be 1-64 characters using letters, digits, '.', '_' or '-'."
+            )
+        return cleaned
+
+    @field_validator("chunk_size_meters")
+    @classmethod
+    def _validate_chunk_size(cls, value: float) -> float:
+        if not 0.1 <= value <= 1000.0:
+            raise ValueError("chunkSizeMeters must be between 0.1 and 1000 metres.")
+        return value
+
+    @field_validator("voxel_size_meters")
+    @classmethod
+    def _validate_voxel_size(cls, value: float | None) -> float | None:
+        if value is None:
+            return None
+        if not 0.0001 <= value <= 1000.0:
+            raise ValueError("voxelSizeMeters must be between 0.0001 and 1000 metres.")
+        return value
+
+    @field_validator("outlier_neighbors")
+    @classmethod
+    def _validate_neighbors(cls, value: int) -> int:
+        if not 3 <= value <= 200:
+            raise ValueError("outlierNeighbors must be between 3 and 200.")
+        return value
+
+    @field_validator("outlier_std_ratio")
+    @classmethod
+    def _validate_std_ratio(cls, value: float) -> float:
+        if not 0.1 <= value <= 10.0:
+            raise ValueError("outlierStdRatio must be between 0.1 and 10.")
+        return value
+
+
+class PointCloudImportResult(CamelModel):
+    scan_id: str
+    store_path: str
+    source_path: str
+    format: str
+    unit: str
+    unit_source: str
+    point_count: PointCounts
+    bounds: Bounds3
+    source_bounds: Bounds3
+    chunk_count: int
+    attributes: list[str]
+    warnings: list[str]
+    elapsed_ms: float
+    source_sha256: str
+    engine_version: str
+
+
+class PointCloudInfoParams(CamelModel):
+    store_path: str = Field(min_length=1)
+
+
+class PointCloudInfoResult(CamelModel):
+    scan_id: str
+    store_path: str
+    source_path: str
+    format: str
+    unit: str
+    unit_source: str
+    point_count: PointCounts
+    bounds: Bounds3
+    source_bounds: Bounds3
+    chunk_count: int
+    attributes: list[str]
+    warnings: list[str]
+    created_at: str
+    engine_version: str
+
+
+class PointCloudQueryParams(CamelModel):
+    store_path: str = Field(min_length=1)
+    bounds: Bounds3 | None = None
+    center: list[float] | None = None
+    radius: float | None = None
+    max_points: int = 10_000
+    include_colors: bool = False
+    include_intensity: bool = False
+
+    @field_validator("center")
+    @classmethod
+    def _center_is_three(cls, value: list[float] | None) -> list[float] | None:
+        if value is not None and len(value) != 3:
+            raise ValueError("center must contain exactly three components.")
+        return value
+
+    @field_validator("radius")
+    @classmethod
+    def _positive_radius(cls, value: float | None) -> float | None:
+        if value is not None and value <= 0:
+            raise ValueError("radius must be greater than zero.")
+        return value
+
+    @field_validator("max_points")
+    @classmethod
+    def _query_limit(cls, value: int) -> int:
+        if not 1 <= value <= 200_000:
+            raise ValueError("maxPoints must be between 1 and 200000.")
+        return value
+
+    @model_validator(mode="after")
+    def _one_query_mode(self) -> "PointCloudQueryParams":
+        has_radius = self.center is not None or self.radius is not None
+        if self.bounds is not None and has_radius:
+            raise ValueError("Specify either bounds or center+radius, not both.")
+        if has_radius and (self.center is None or self.radius is None):
+            raise ValueError("center and radius must be supplied together.")
+        return self
+
+
+class PointCloudQueryResult(CamelModel):
+    positions: list[list[float]]
+    count: int
+    returned: int
+    truncated: bool
+    colors: list[list[int]] | None = None
+    intensity: list[float] | None = None
 
 
 def is_compatible(version: str | None) -> bool:

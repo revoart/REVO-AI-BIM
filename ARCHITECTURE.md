@@ -25,9 +25,9 @@ confidence, geometry primitives). The C# side owns every Revit transaction.
 | Project | TFM | Responsibility |
 | --- | --- | --- |
 | `RevoAI.Contracts` | `net8.0` | Wire DTOs, protocol version, error codes, JSON settings. No Revit or Windows dependency, so it is reusable by a future Revit 2025 build. |
-| `RevoAI.Revit` | `net10.0-windows` | Add-in entry point, configuration, logging, engine process client. Phase 2 adds ribbon and WPF workspace. |
-| `RevoAI.Engine` | Python ≥3.11 | Local processing service. Phase 1: transport + handshake only. |
-| `RevoAI.Geometry` | Python ≥3.11 | Reconstruction algorithms. Phase 1: unit kernel. |
+| `RevoAI.Revit` | `net10.0-windows` | Add-in entry point, configuration, logging, engine process client, ribbon, WPF workspace and point cloud import dialog. |
+| `RevoAI.Engine` | Python ≥3.11 | Local processing service: transport, handshake, point cloud readers, preprocessing, chunk store and spatial queries. |
+| `RevoAI.Geometry` | Python ≥3.11 | Unit kernel and, in later phases, reconstruction algorithms. |
 
 ## 3. Transport and protocol
 
@@ -37,7 +37,8 @@ stdin/stdout. See [ADR 0002](adr/0002-engine-ipc.md).
 - One JSON object per line; UTF-8; no embedded newlines.
 - Request `id` is a string. Responses echo it. Notifications have no `id` and
   are currently ignored by the client (reserved for progress events).
-- Methods in Phase 1: `initialize`, `ping`, `shutdown`.
+- Methods: `initialize`, `ping`, `shutdown`, `pointcloud.import`,
+  `pointcloud.info`, `pointcloud.query`.
 - Major protocol version must match (`1.x` accepted). Mismatch returns
   `-32010`.
 - Methods other than `ping`/`shutdown` require `initialize` first (`-32011`).
@@ -89,30 +90,64 @@ Environment overrides: `REVOAI_PYTHON`, `REVOAI_ENGINE_ROOT`,
 - Revit internal unit: **foot**; conversion happens at the Revit boundary.
 - Source scan coordinates are preserved; no recentring is performed without an
   explicit, recorded transform.
+- Import metadata records `sourceBounds` in source units, `bounds` in metres,
+  the source unit, how it was determined (`format`, `header`, `user` or
+  `assumed`) and the exact metres-per-source-unit factor.
+- Supported units include millimetres, centimetres, metres, inches, feet and US
+  survey feet.
 - `revoai_geometry.units` is the single conversion implementation and is unit
   tested. A wrong unit must raise, not guess.
 
-## 8. Threading rules
+## 8. Point cloud pipeline
+
+```
+source file
+  → format reader (E57 / LAS / LAZ / PLY / XYZ)
+  → source-unit resolution
+  → optional outlier removal / voxel downsampling
+  → one explicit conversion to metres
+  → 3D-grid chunking
+  → metadata.json + chunks/*.npz
+  → bounds / radius / sample queries (nearest is store-level)
+```
+
+- Readers return positions in the file's source coordinate system and report
+  the unit they can prove. The importer performs the only unit conversion.
+- No reader recentres, rotates or rescales coordinates. `sourceBounds` and the
+  source unit remain in metadata for auditing.
+- Each chunk stores a float64 origin and float32 offsets, plus optional uint8
+  colours, float32 intensity and uint8 classification.
+- `metadata.json` contains a 3D cell-to-chunk grid. Queries open only chunks
+  whose cells intersect the request; they do not load the whole store.
+- Chunk size defaults to 25 m. Import is synchronous and currently loads the
+  source cloud before chunking; streaming import is a Phase 9 item.
+- A scan store is written to a temporary folder and renamed into place, so a
+  failed import does not leave a half-written store.
+
+## 9. Threading rules
 
 - Revit API calls run only on Revit's main thread.
-- The Phase 2 modeless UI marshals work through `ExternalEvent`.
+- The modeless WPF UI (Phases 2-3) marshals Revit API work through `ExternalEvent`.
 - The Python engine runs out of process, so it cannot touch the Revit API.
 - Long operations must be cancellable and must report progress.
 
-## 9. Versioning
+## 10. Versioning
 
-- Product version follows SemVer (`0.2.0`).
+- Product version follows SemVer (`0.3.0`).
 - Assembly/file versions mirror it.
 - Protocol has an independent `MAJOR.MINOR`.
 - Each Revit version gets its own build output folder
   (`bin\<Configuration>\<RevitVersion>`) and its own manifest installation.
 
-## 10. User interface and Revit marshalling
+## 11. User interface and Revit marshalling
 
 - Ribbon built in `Ribbon/RevoRibbon.cs`; each button points at an
   `IExternalCommand` in `Commands/`.
 - Commands that belong to later phases show an explicit TaskDialog; they never
   create placeholder geometry.
+- **Import Scan** opens the modeless workspace and a real import dialog. The
+  dialog sends the file to `pointcloud.import`; it does not draw or invent
+  geometry. The workspace displays the returned metadata.
 - The modeless `WorkspaceWindow` binds to `WorkspaceViewModel`.
 - Every Revit API call from the window goes through `RevitTaskRunner`, which
   queues work and raises an `ExternalEvent`. The WPF thread never touches
@@ -123,7 +158,7 @@ Environment overrides: `REVOAI_PYTHON`, `REVOAI_ENGINE_ROOT`,
 - Settings are persisted through `RevoConfigWriter`; the engine reads them when
   it starts.
 
-## 11. Error handling
+## 12. Error handling
 
 All engine failures are typed `RpcError` values with a machine code, a human
 message and, where possible, a `remedy`. The add-in must present the remedy and

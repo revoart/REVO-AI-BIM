@@ -5,42 +5,59 @@ This file is deliberately blunt. Anything listed here is **not working** or
 
 ## Product scope (current)
 
-1. **The UI is a shell.** The ribbon and workspace exist, but Import Scan, Scan
-   Analysis, Generate BIM, Model Review and Quality Check only show honest
+1. **Import works; the rest of the UI is still a shell.** E57, LAS, LAZ, PLY and
+   XYZ/TXT scans can be imported, preprocessed and stored locally. Scan
+   Analysis, Generate BIM, Model Review and Quality Check still show honest
    "not implemented" dialogs. The only model-changing action is creating levels.
-2. **No point cloud support.** E57, RCP/RCS, LAS/LAZ, PLY and XYZ are not read
-   yet. The dependencies are installed for Phase 3 but no importer exists.
-3. **No AI.** No model, no training, no inference, no segmentation.
-4. **No BIM reconstruction.** No walls, floors, doors, windows or other scanned
+2. **No RCP/RCS support.** Those formats require a verified Autodesk workflow
+   and are not accepted by the importer.
+3. **No point-cloud display in Revit.** The workspace shows import metadata;
+   it does not draw points, meshes or placeholder geometry in the model.
+4. **No AI.** No model, no training, no inference, no segmentation.
+5. **No BIM reconstruction.** No walls, floors, doors, windows or other scanned
    elements are created. Level creation is project setup, not Scan-to-BIM.
-5. **No accuracy figures.** Nothing has been measured because nothing is
+6. **No accuracy figures.** Nothing has been measured because nothing is
    reconstructed yet.
+7. **No import streaming or cancellation.** Readers load the source cloud
+   before chunking, so peak memory scales with the source file. The UI shows an
+   indeterminate progress bar, and the engine has no cancel request. Phase 9.
+8. **No CRS reprojection.** Coordinates are preserved as found; a projected CRS
+   is not transformed into a project coordinate system.
+9. **Unit assumptions are explicit.** E57 is metres by specification. LAS/LAZ
+   uses a WKT CRS unit when present, otherwise metres are assumed. PLY/XYZ have
+   no reliable unit metadata, so metres are assumed unless the user selects a
+   unit. Warnings are returned and shown in the UI.
+10. **Vendor E57 variants are not covered.** E57 tests use files written by
+    `pye57`; they prove the reader and pose handling, not every scanner export.
 
 ## Environment and compatibility
 
-6. **Revit 2025 is not installed or tested.** The `net8.0-windows` mapping in
-   `Directory.Build.props` is a hypothesis, not a verified build.
-7. **Revit 2026/2027 use .NET 10**, not .NET 8 as originally assumed. The add-in
-   targets `net10.0-windows`. Do not copy .NET 8 build recipes from older Revit
-   documentation.
-8. **Python 3.14 only.** Older Python versions are not tested. Open3D 0.20.0 is
-   the only wheel verified for cp314.
-9. **Windows only.** No macOS or Linux support is planned for the add-in.
+11. **Revit 2025 is not installed or tested.** The `net8.0-windows` mapping in
+    `Directory.Build.props` is a hypothesis, not a verified build.
+12. **Revit 2026/2027 use .NET 10**, not .NET 8 as originally assumed. The add-in
+    targets `net10.0-windows`. Do not copy .NET 8 build recipes from older Revit
+    documentation.
+13. **Python 3.14 only.** Older Python versions are not tested. Open3D 0.20.0,
+    `pye57` 0.4.19 and `laspy` 2.7.0 are the verified cp314 wheels.
+14. **Windows only.** No macOS or Linux support is planned for the add-in.
 
 ## Engineering
 
-10. **The engine is a child process over stdio.** If the add-in crashes without
+15. **The engine is a child process over stdio.** If the add-in crashes without
     disposing the client, the engine process may survive until the OS cleans it
     up. A supervisor/watchdog arrives in Phase 9.
-11. **One engine process per add-in session, single-threaded.** No concurrent
+16. **One engine process per add-in session, single-threaded.** No concurrent
     jobs. Long-running jobs and cancellation are not implemented yet.
-12. **No installer.** `install-addin.ps1` is a developer script that writes to
+17. **No installer.** `install-addin.ps1` is a developer script that writes to
     `%APPDATA%`. Phase 10 replaces it with a signed installer.
-13. **No licensing, telemetry, onboarding or support workflow.** Phase 10.
-14. **No code signing.** Windows and Revit may warn about unsigned assemblies.
-15. **OneDrive workspace.** The repository currently sits in a OneDrive folder;
+18. **No licensing, telemetry, onboarding or support workflow.** Phase 10.
+19. **No code signing.** Windows and Revit may warn about unsigned assemblies.
+20. **OneDrive workspace.** The repository currently sits in a OneDrive folder;
     this can cause file locks and sync churn. Move to local disk for large scans.
-16. **No CI pipeline yet.** Tests are run locally via `scripts\test.ps1`.
+21. **No CI pipeline yet.** Tests are run locally via `scripts\test.ps1`.
+22. **Nearest-neighbour search is not exposed over JSON-RPC.** It is implemented
+    and tested in `PointCloudStore.nearest`, but `pointcloud.query` currently
+    supports bounds, radius and sample modes only.
 
 ## Honesty rules for future phases
 

@@ -110,6 +110,41 @@ public sealed class PythonEngineClient : IAsyncDisposable
         return response.GetResult<PingResult>();
     }
 
+    /// <summary>
+    /// Imports a point cloud into a local chunked store. Imports can take
+    /// minutes for large scans, so the default timeout is deliberately longer
+    /// than the normal request timeout.
+    /// </summary>
+    public Task<PointCloudImportResult> ImportPointCloudAsync(
+        PointCloudImportParams parameters,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<PointCloudImportResult>(
+            EngineMethods.PointCloudImport,
+            parameters,
+            timeout ?? TimeSpan.FromMinutes(30),
+            cancellationToken);
+
+    public Task<PointCloudInfoResult> GetPointCloudInfoAsync(
+        string storePath,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<PointCloudInfoResult>(
+            EngineMethods.PointCloudInfo,
+            new PointCloudInfoParams { StorePath = storePath },
+            timeout ?? _requestTimeout,
+            cancellationToken);
+
+    public Task<PointCloudQueryResult> QueryPointCloudAsync(
+        PointCloudQueryParams parameters,
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default) =>
+        CallAsync<PointCloudQueryResult>(
+            EngineMethods.PointCloudQuery,
+            parameters,
+            timeout ?? _requestTimeout,
+            cancellationToken);
+
     public async Task<ShutdownResult> ShutdownAsync(CancellationToken cancellationToken = default)
     {
         if (_disposed || _process.HasExited)
@@ -191,6 +226,17 @@ public sealed class PythonEngineClient : IAsyncDisposable
             _process.Dispose();
             _gate.Dispose();
         }
+    }
+
+    private async Task<T> CallAsync<T>(
+        string method,
+        object parameters,
+        TimeSpan timeout,
+        CancellationToken cancellationToken)
+    {
+        var request = RpcRequest.Create(NextId(), method, parameters);
+        var response = await SendAsync(request, timeout, cancellationToken);
+        return response.GetResult<T>();
     }
 
     private async Task<InitializeResult> InitializeCoreAsync(

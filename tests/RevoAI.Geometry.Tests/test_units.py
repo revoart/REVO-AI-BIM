@@ -28,6 +28,7 @@ from revoai_geometry.units import (
         ("ft", UnitSystem.FEET),
         ("feet", UnitSystem.FEET),
         ("feet.", UnitSystem.FEET),
+        ("US survey feet", UnitSystem.US_SURVEY_FEET),
     ],
 )
 def test_parse_unit_accepts_common_aliases(alias: str, expected: UnitSystem) -> None:
@@ -54,6 +55,7 @@ def test_revit_internal_unit_is_feet() -> None:
 def test_feet_round_trip() -> None:
     assert feet_to_meters(10) == pytest.approx(3.048)
     assert meters_to_feet(3.048) == pytest.approx(10)
+    assert to_meters(3937, "US survey feet") == pytest.approx(1200.0)
 
 
 def test_convert_between_units() -> None:

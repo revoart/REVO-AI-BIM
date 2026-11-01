@@ -55,6 +55,7 @@ for Revit 2025/2026; that assumption does not hold on this machine.
   - `open3d 0.20.0` — `cp314-cp314-win_amd64` (75.7 MB).
   - `laspy 2.7.0` — pure Python.
   - `lazrs 0.8.2` — `cp314-cp314-win_amd64`.
+  - `pye57 0.4.19` — `cp314-cp314-win_amd64` (with `pyquaternion 0.9.9`).
 - Project virtual environment: `.venv` (Python 3.14), dependencies pinned in
   `requirements.in` / `requirements-dev.in` and resolved in
   `requirements.lock.txt`.

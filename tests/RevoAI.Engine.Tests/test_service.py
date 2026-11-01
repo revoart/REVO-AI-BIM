@@ -51,7 +51,14 @@ def test_initialize_returns_honest_capabilities() -> None:
     assert response.error is None
     assert state.initialized is True
     assert response.result["protocolVersion"] == "1.0"
-    assert response.result["capabilities"] == ["initialize", "ping", "shutdown"]
+    assert response.result["capabilities"] == [
+        "initialize",
+        "ping",
+        "shutdown",
+        "pointcloud.import",
+        "pointcloud.info",
+        "pointcloud.query",
+    ]
 
 
 def test_incompatible_protocol_is_rejected() -> None:

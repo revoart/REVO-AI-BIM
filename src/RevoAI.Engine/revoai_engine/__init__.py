@@ -1,7 +1,7 @@
 """Revo AI BIM local processing engine.
 
-Phase 1 scope: protocol handshake, health check and structured logging. Point
-cloud processing, AI inference and reconstruction arrive in later phases.
+Phase 3 scope: point cloud import, unit preservation, preprocessing, chunked
+storage and spatial queries. AI inference and reconstruction arrive later.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

@@ -24,8 +24,14 @@ public sealed class WorkspaceViewModel : ObservableObject
     private double _unitsPerFoot = 0.3048;
 
     private string _scanFileName = "No scan loaded";
-    private string _scanStatus = "Point cloud import arrives in Phase 3";
+    private string _scanStatus = "Import an E57, LAS/LAZ, PLY or XYZ scan to begin.";
     private string _pointCount = "—";
+    private string _scanFormat = "—";
+    private string _scanUnit = "—";
+    private string _scanBounds = "—";
+    private string _scanChunks = "—";
+    private string _scanStorePath = "—";
+    private string _scanWarnings = string.Empty;
 
     private string _selectedBuildingType = "Single-family house";
     private string _wallHeightText = "2.70";
@@ -39,6 +45,7 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     private string _statusMessage = "Workspace ready. No scan loaded.";
     private bool _isBusy;
+    private bool _importDialogOpen;
     private double _progressValue;
     private int _detectedElements;
     private string _confidenceText = "—";
@@ -63,7 +70,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         ];
 
         RefreshCommand = new AsyncRelayCommand(RefreshAsync);
-        ImportScanCommand = new AsyncRelayCommand(ShowImportNotAvailableAsync);
+        ImportScanCommand = new AsyncRelayCommand(BeginImportAsync);
         TestEngineCommand = new AsyncRelayCommand(TestEngineAsync);
         AddLevelCommand = new RelayCommand(AddLevel);
         RemoveLevelCommand = new RelayCommand(RemoveLevel, () => SelectedLevel is { IsExisting: false });
@@ -158,6 +165,42 @@ public sealed class WorkspaceViewModel : ObservableObject
     {
         get => _pointCount;
         private set => SetProperty(ref _pointCount, value);
+    }
+
+    public string ScanFormat
+    {
+        get => _scanFormat;
+        private set => SetProperty(ref _scanFormat, value);
+    }
+
+    public string ScanUnit
+    {
+        get => _scanUnit;
+        private set => SetProperty(ref _scanUnit, value);
+    }
+
+    public string ScanBounds
+    {
+        get => _scanBounds;
+        private set => SetProperty(ref _scanBounds, value);
+    }
+
+    public string ScanChunks
+    {
+        get => _scanChunks;
+        private set => SetProperty(ref _scanChunks, value);
+    }
+
+    public string ScanStorePath
+    {
+        get => _scanStorePath;
+        private set => SetProperty(ref _scanStorePath, value);
+    }
+
+    public string ScanWarnings
+    {
+        get => _scanWarnings;
+        private set => SetProperty(ref _scanWarnings, value);
     }
 
     public string SelectedBuildingType
@@ -271,6 +314,9 @@ public sealed class WorkspaceViewModel : ObservableObject
     public string LogDirectory => RevoLog.Directory;
 
     public Task InitializeAsync() => RefreshAsync();
+
+    /// <summary>Opens the import dialog from the ribbon while the workspace is visible.</summary>
+    public void BeginImport() => _ = BeginImportAsync();
 
     private async Task RefreshAsync()
     {
@@ -448,24 +494,73 @@ public sealed class WorkspaceViewModel : ObservableObject
         }
     }
 
-    private async Task ShowImportNotAvailableAsync()
+    private Task BeginImportAsync()
     {
+        if (_importDialogOpen)
+        {
+            return Task.CompletedTask;
+        }
+
+        _importDialogOpen = true;
         try
         {
-            await _runner.InvokeAsync(_ =>
+            var window = new ImportScanWindow();
+            PointCloudImportResult? applied = null;
+
+            window.ViewModel.ImportCompleted += result =>
             {
-                TaskDialog.Show(
-                    "Revo AI BIM",
-                    "Point cloud import is implemented in Phase 3.\n\n" +
-                    "This Phase 2 build provides the ribbon, workspace, configuration and " +
-                    "the tested C#/Python engine channel. No scan can be loaded yet.");
-                return true;
-            });
+                applied = result;
+                ApplyImportResult(result);
+            };
+
+            if (_revitWindowHandle != IntPtr.Zero)
+            {
+                new System.Windows.Interop.WindowInteropHelper(window) { Owner = _revitWindowHandle };
+            }
+
+            window.ShowDialog();
+
+            // Covers a result that arrived before the dialog closed. A later result
+            // still reaches the workspace through ImportCompleted.
+            if (applied is null && window.ViewModel.Result is { } result)
+            {
+                ApplyImportResult(result);
+            }
         }
         catch (Exception ex)
         {
-            AddError("Could not show the import notice.", ex);
+            AddError("Could not open the point cloud import dialog.", ex);
         }
+        finally
+        {
+            _importDialogOpen = false;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void ApplyImportResult(PointCloudImportResult result)
+    {
+        ScanFileName = Path.GetFileName(result.SourcePath);
+        ScanStatus = "Imported and chunked locally";
+        PointCount = $"{result.PointCount.Stored:N0} stored / {result.PointCount.Original:N0} source";
+        ScanFormat = result.Format.ToUpperInvariant();
+        ScanUnit = $"{result.Unit} ({result.UnitSource})";
+        ScanBounds =
+            $"[{result.Bounds.Min[0]:0.###}, {result.Bounds.Min[1]:0.###}, {result.Bounds.Min[2]:0.###}] → " +
+            $"[{result.Bounds.Max[0]:0.###}, {result.Bounds.Max[1]:0.###}, {result.Bounds.Max[2]:0.###}] m";
+        ScanChunks = result.ChunkCount.ToString("N0", CultureInfo.CurrentCulture);
+        ScanStorePath = result.StorePath;
+        ScanWarnings = result.Warnings.Count == 0
+            ? "No import warnings."
+            : string.Join(Environment.NewLine, result.Warnings.Select(warning => "• " + warning));
+
+        StatusMessage =
+            $"Scan '{result.ScanId}' imported: {result.PointCount.Stored:N0} stored point(s) in " +
+            $"{result.ChunkCount:N0} chunk(s).";
+        RevoLog.Info(
+            $"Workspace loaded scan {result.ScanId} from {result.StorePath} " +
+            $"({result.PointCount.Stored} points, {result.ChunkCount} chunks).");
     }
 
     private void OpenSettings()
