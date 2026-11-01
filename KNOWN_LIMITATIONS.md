@@ -90,7 +90,10 @@ This file is deliberately blunt. Anything listed here is **not working** or
 17. **No installer.** `install-addin.ps1` is a developer script that writes to
     `%APPDATA%`. Phase 10 replaces it with a signed installer.
 18. **No licensing, telemetry, onboarding or support workflow.** Phase 10.
-19. **No code signing.** Windows and Revit may warn about unsigned assemblies.
+19. **No code signing.** Revit shows a **Security - Unsigned Add-In** dialog after
+    installing a new build. Choose **Always Load**; choosing **Do Not Load**
+    leaves the REVO AI BIM tab absent. Phase 10 replaces this with signed
+    assemblies.
 20. **OneDrive workspace.** The repository currently sits in a OneDrive folder;
     this can cause file locks and sync churn. Move to local disk for large scans.
 21. **No CI pipeline yet.** Tests are run locally via `scripts\test.ps1`.

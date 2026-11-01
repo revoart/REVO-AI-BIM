@@ -108,6 +108,8 @@ Install the developer add-in:
 
 Then start Revit: the **REVO AI BIM** tab appears with Workspace, Import Scan,
 Scan Analysis, Generate BIM, Model Review, Quality Check, Settings and About.
+If Revit shows **Security - Unsigned Add-In**, choose **Always Load**; **Do Not
+Load** hides the add-in.
 Open **Workspace** to see the project, levels, settings and engine test, or use
 **Import Scan** to import an E57, LAS/LAZ, PLY or XYZ file into a local chunked
 store. Imported scans are not yet drawn in Revit; the workspace reports the
