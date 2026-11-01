@@ -10,8 +10,10 @@ Semantic Versioning.
 - Import, Scan Analysis and Generate BIM are now stages inside the existing
   Workspace window. The separate process windows are no longer opened.
 - Sidebar stage navigation: Project setup, Import scan, Analyze scan, Generate
-  BIM, with an active-stage indicator.
+  BIM, with a high-contrast blue active stage and left-aligned labels.
 - Stage-specific headers, subtitles and continuation buttons.
+- Levels table no longer auto-generates duplicate columns.
+- **Create in Revit** is disabled until a plan preview exists.
 - Current scan summary remains visible in the sidebar while working.
 - The workspace project information, levels, diagnostics and engine controls
   moved into the Project setup stage.
