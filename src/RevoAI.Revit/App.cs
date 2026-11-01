@@ -16,6 +16,8 @@ public sealed class App : IExternalApplication
         try
         {
             RevoLog.Initialize();
+            InstallCrashLogging();
+            WorkspaceController.Initialize();
             RevoRibbon.Create(application);
             RevoLog.Info(
                 $"Revo AI BIM {BuildInfo.Version} loaded. Revit {application.ControlledApplication.VersionNumber} " +
@@ -27,6 +29,28 @@ public sealed class App : IExternalApplication
             RevoLog.Error("Revo AI BIM failed to start.", ex);
             return Result.Failed;
         }
+    }
+
+    private static void InstallCrashLogging()
+    {
+        // These handlers do not swallow failures; they make sure the add-in log
+        // contains the managed exception behind a Revit crash.
+        System.Windows.Threading.Dispatcher.CurrentDispatcher.UnhandledException += (_, args) =>
+            RevoLog.Error("Unhandled WPF dispatcher exception.", args.Exception);
+
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception exception)
+            {
+                RevoLog.Error("Unhandled AppDomain exception.", exception);
+            }
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            RevoLog.Error("Unobserved task exception.", args.Exception);
+            args.SetObserved();
+        };
     }
 
     public Result OnShutdown(UIControlledApplication application)

@@ -1,8 +1,9 @@
 # Phase 4 Completion Report — Scan Analysis Baseline
 
-**Version:** 0.4.0  
+**Version:** 0.4.1  
 **Date:** 2026-11-01  
-**Status:** Implemented and automatically verified. Manual in-Revit verification pending.
+**Status:** Implemented and automatically verified. Import Scan crash fixed.
+Manual in-Revit verification pending.
 
 ## 1. Scope delivered
 
@@ -60,6 +61,8 @@ point cloud store
 | Synthetic room: floor, ceiling and four walls detected | **Passed** |
 | Persisted result reload and typed not-found error | **Passed** |
 | Engine smoke test advertises 0.4.0 capabilities | **Passed** |
+| Import Scan opens without Revit termination (0.4.1 hotfix) | **Passed** |
+| Unsupported `.rwcx` input returns a typed error, no crash | **Passed** |
 
 Commands used:
 
@@ -89,8 +92,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-engine.ps1
 
 ## 5. Manual verification still required
 
-0.4.0 is built and installed for Revit 2026 and 2027. The installed assemblies
-match the Release outputs and report version `0.4.0.0`. No Revit process was
+0.4.1 is built and installed for Revit 2026 and 2027. The installed assemblies
+match the Release outputs and report version `0.4.1.0`. No Revit process was
 running at install time.
 
 1. Start Revit 2026/2027 with 0.4.0 installed.

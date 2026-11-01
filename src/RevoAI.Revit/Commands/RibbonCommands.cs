@@ -13,7 +13,7 @@ public sealed class WorkspaceCommand : RevoCommandBase
 {
     protected override Result ExecuteCore(ExternalCommandData commandData)
     {
-        WorkspaceController.Show(commandData.Application);
+        WorkspaceController.ShowAfterCommand(commandData.Application);
         return Result.Succeeded;
     }
 }

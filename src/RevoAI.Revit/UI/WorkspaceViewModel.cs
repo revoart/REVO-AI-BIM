@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Windows;
 using System.Windows.Input;
 using Autodesk.Revit.UI;
 using RevoAI.Contracts.Protocol;
@@ -45,8 +46,11 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     private string _statusMessage = "Workspace ready. No scan loaded.";
     private bool _isBusy;
+    private bool _initialized;
     private bool _importDialogOpen;
     private bool _analysisDialogOpen;
+    private ImportScanWindow? _importWindow;
+    private ScanAnalysisWindow? _analysisWindow;
     private double _progressValue;
     private int _detectedElements;
     private string _confidenceText = "—";
@@ -335,6 +339,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         {
             var snapshot = await _runner.InvokeAsync(DocumentReader.Read);
             ApplySnapshot(snapshot);
+            _initialized = true;
             StatusMessage = $"Loaded '{snapshot.Title}'.";
         }
         catch (Exception ex)
@@ -502,6 +507,7 @@ public sealed class WorkspaceViewModel : ObservableObject
     {
         if (_importDialogOpen)
         {
+            _importWindow?.Activate();
             return Task.CompletedTask;
         }
 
@@ -509,35 +515,37 @@ public sealed class WorkspaceViewModel : ObservableObject
         try
         {
             var window = new ImportScanWindow();
-            PointCloudImportResult? applied = null;
-
-            window.ViewModel.ImportCompleted += result =>
+            window.ViewModel.ImportCompleted += ApplyImportResult;
+            window.Closed += (_, _) =>
             {
-                applied = result;
-                ApplyImportResult(result);
+                _importWindow = null;
+                _importDialogOpen = false;
+                if (!_initialized)
+                {
+                    _ = InitializeAsync();
+                }
             };
 
-            if (_revitWindowHandle != IntPtr.Zero)
+            var owner = WorkspaceController.CurrentWindow;
+            if (owner is { IsLoaded: true })
+            {
+                window.Owner = owner;
+            }
+            else if (_revitWindowHandle != IntPtr.Zero)
             {
                 new System.Windows.Interop.WindowInteropHelper(window) { Owner = _revitWindowHandle };
             }
 
-            window.ShowDialog();
-
-            // Covers a result that arrived before the dialog closed. A later result
-            // still reaches the workspace through ImportCompleted.
-            if (applied is null && window.ViewModel.Result is { } result)
-            {
-                ApplyImportResult(result);
-            }
+            _importWindow = window;
+            window.Show();
+            window.WindowState = WindowState.Normal;
+            window.Activate();
         }
         catch (Exception ex)
         {
-            AddError("Could not open the point cloud import dialog.", ex);
-        }
-        finally
-        {
             _importDialogOpen = false;
+            _importWindow = null;
+            AddError("Could not open the point cloud import dialog.", ex);
         }
 
         return Task.CompletedTask;
@@ -547,6 +555,7 @@ public sealed class WorkspaceViewModel : ObservableObject
     {
         if (_analysisDialogOpen)
         {
+            _analysisWindow?.Activate();
             return Task.CompletedTask;
         }
 
@@ -564,33 +573,37 @@ public sealed class WorkspaceViewModel : ObservableObject
         try
         {
             var window = new ScanAnalysisWindow(ScanStorePath, ConfidenceThreshold);
-            SegmentationResult? applied = null;
-
-            window.ViewModel.AnalysisCompleted += result =>
+            window.ViewModel.AnalysisCompleted += ApplyAnalysisResult;
+            window.Closed += (_, _) =>
             {
-                applied = result;
-                ApplyAnalysisResult(result);
+                _analysisWindow = null;
+                _analysisDialogOpen = false;
+                if (!_initialized)
+                {
+                    _ = InitializeAsync();
+                }
             };
 
-            if (_revitWindowHandle != IntPtr.Zero)
+            var owner = WorkspaceController.CurrentWindow;
+            if (owner is { IsLoaded: true })
+            {
+                window.Owner = owner;
+            }
+            else if (_revitWindowHandle != IntPtr.Zero)
             {
                 new System.Windows.Interop.WindowInteropHelper(window) { Owner = _revitWindowHandle };
             }
 
-            window.ShowDialog();
-
-            if (applied is null && window.ViewModel.Result is { } result)
-            {
-                ApplyAnalysisResult(result);
-            }
+            _analysisWindow = window;
+            window.Show();
+            window.WindowState = WindowState.Normal;
+            window.Activate();
         }
         catch (Exception ex)
         {
-            AddError("Could not open the Scan Analysis dialog.", ex);
-        }
-        finally
-        {
             _analysisDialogOpen = false;
+            _analysisWindow = null;
+            AddError("Could not open the Scan Analysis dialog.", ex);
         }
 
         return Task.CompletedTask;

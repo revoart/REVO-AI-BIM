@@ -3,6 +3,31 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.4.1] - 2026-11-01 - Import Scan crash hotfix
+
+### Fixed
+
+- Removed the fatal `ProgressValue` TwoWay binding on the read-only workspace
+  property; the progress bar now binds one-way.
+- Deferred workspace/import/analysis window opening to Revit's `Idling` event so
+  no WPF window, modal loop or `ExternalEvent` is created inside a ribbon
+  command. This prevents the Revit 2027 `0xe0434352` termination.
+- Create the `RevitTaskRunner`/`ExternalEvent` during `OnStartup`, where Revit
+  permits it, instead of during a deferred UI action.
+- Import and Scan Analysis windows are now modeless, owned by the workspace and
+  forced to a normal window state, so they cannot hide inside a nested modal
+  loop or open minimized.
+- Added managed crash logging for the WPF dispatcher, AppDomain and unobserved
+  tasks.
+
+### Verified
+
+- Import Scan opens the workspace and import dialog without terminating Revit
+  2027.
+- Unsupported `.rwcx` input now returns the normal typed error dialog instead of
+  crashing.
+- Revit 2026 and 2027 Release builds still complete with zero warnings.
+
 ## [0.4.0] - 2026-11-01 - Phase 4: Scan Analysis baseline
 
 ### Added
