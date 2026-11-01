@@ -18,6 +18,7 @@ from revoai_engine.protocol import (
 )
 from revoai_engine.reconstruction import PlanError, create_plan
 from revoai_engine.reconstruction.astra import request_astra_plan
+from revoai_engine.reconstruction.astra_subscription import request_subscription_plan
 from revoai_engine.service import EngineState, dispatch
 
 
@@ -389,6 +390,61 @@ def test_astra_provider_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> Non
     with pytest.raises(PlanError) as error:
         request_astra_plan({"scanId": "test"})
     assert error.value.code == ErrorCode.AI_PROVIDER_FAILED
+
+
+def test_subscription_astra_provider_is_validated(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    imported = _import_room(tmp_path, name="subscription-room")
+    run_segmentation(
+        SegmentationRunParams(
+            store_path=imported["storePath"],
+            voxel_size_meters=0.0,
+            max_points=10_000,
+            plane_distance_meters=0.01,
+            min_plane_points=100,
+            max_planes=20,
+        )
+    )
+
+    def fake_request(context):
+        assert context["scanId"] == imported["scanId"]
+        return {
+            "method": "revo-gateway-test",
+            "levels": [{"id": "L1", "name": "Level 1", "elevationMeters": 0.0}],
+            "floors": [
+                {
+                    "id": "F1",
+                    "levelId": "L1",
+                    "boundary": [[0, 0, 0], [4, 0, 0], [4, 3, 0], [0, 3, 0]],
+                    "confidence": 0.9,
+                }
+            ],
+            "walls": [],
+        }
+
+    monkeypatch.setattr(
+        "revoai_engine.reconstruction.astra_subscription.request_subscription_plan",
+        fake_request,
+    )
+    result = create_plan(
+        ReconstructionPlanParams(
+            store_path=imported["storePath"],
+            provider="astra_subscription",
+        )
+    )
+
+    assert result["method"] == "external-bim-plan/1"
+    assert result["parameters"]["sourceLabel"] == "revo-subscription:gpt-6-astra"
+    assert len(result["floors"]) == 1
+
+
+def test_subscription_provider_requires_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("REVOAI_ASTRA_GATEWAY_URL", "https://example.test")
+    monkeypatch.delenv("REVOAI_SUBSCRIPTION_TOKEN", raising=False)
+    with pytest.raises(PlanError) as error:
+        request_subscription_plan({"scanId": "test"})
+    assert error.value.code == ErrorCode.SUBSCRIPTION_REQUIRED
 
 
 def test_segmentation_not_found_is_typed(tmp_path: Path) -> None:

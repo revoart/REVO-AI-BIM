@@ -91,7 +91,9 @@ report contains test evidence.
 - [x] Wall line endpoints, base level and height resolution
 - [x] `reconstruction.plan` JSON-RPC method and typed DTOs
 - [x] External AI plan JSON contract, validation and `PLAN_INVALID`
-- [x] GPT-6 Astra provider with `OPENAI_API_KEY` and `AI_PROVIDER_FAILED`
+- [x] GPT-6 Astra BYO provider with `OPENAI_API_KEY` and `AI_PROVIDER_FAILED`
+- [x] GPT-6 Astra subscription gateway client and typed subscription errors
+- [ ] Subscription backend, sign-in, token storage and billing
 - [x] Plan preview stage inside the single Workspace window
 - [x] Native `Floor.Create` / `Wall.Create` in one transaction
 - [x] Existing level reuse and missing level creation

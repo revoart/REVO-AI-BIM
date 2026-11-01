@@ -19,7 +19,7 @@ There are two integration modes:
 2. Let the external tool read the scan or the Revo metadata/summary.
 3. The tool writes `bim-plan.json` in **metres**, using the scan's coordinate
    system.
-4. In **Generate BIM**, enable **Use an external AI BIM plan (JSON)** and choose
+4. In **Generate BIM**, set **PLAN SOURCE** to **External plan JSON** and choose
    the file.
 5. Click **Create preview**. Revo validates and normalizes the plan.
 6. Review levels, floors and walls, then click **Create in Revit**.
@@ -30,24 +30,38 @@ The normalized plan is written to:
 <scan store>/analysis/reconstruction-plan.json
 ```
 
-## GPT-6 Astra provider
+## GPT-6 Astra providers
+
+### Revo-managed subscription (recommended)
+
+The production add-on uses a Revo backend gateway, not an OpenAI key on the
+customer machine. Configure the engine environment:
+
+```text
+REVOAI_ASTRA_GATEWAY_URL=https://your-revo-service.example
+REVOAI_SUBSCRIPTION_TOKEN=<short-lived subscriber token>
+```
+
+Then choose **GPT-6 Astra (subscription)** in Generate BIM. The backend owns the
+OpenAI key, entitlement and usage metering. See
+[subscription-architecture.md](subscription-architecture.md).
+
+### BYO API key (advanced)
 
 1. Set `OPENAI_API_KEY` for the Windows user that runs Revit, then restart Revit
    so the Python child process inherits it.
 2. Open **Generate BIM**.
-3. Set **PLAN SOURCE** to **GPT-6 Astra (API)**.
-4. Keep the model id `gpt-6-astra` or enter the exact model id required by the
-   account.
+3. Set **PLAN SOURCE** to **GPT-6 Astra (API key)**.
+4. Keep `gpt-6-astra` or enter the exact model id required by your account.
 5. Click **Create preview**.
 
-The engine sends the scan metadata, summary and high-confidence segmentation
-elements to the model, requests the documented JSON schema, then runs the same
-bounds/geometry validation as a file plan. If validation fails, no Revit geometry
-is created.
+The engine sends scan metadata, summary and high-confidence segmentation
+elements, requests the documented JSON schema, then runs the same bounds and
+geometry validation as a file plan. If validation fails, no Revit geometry is
+created.
 
 The key is read from the process environment. It is not written to config, logs
-or the plan file. API usage is billed by OpenAI; the default model pricing at the
-time of writing is on the OpenAI API pricing page.
+or the plan file. API usage is billed by OpenAI.
 
 ## JSON schema
 

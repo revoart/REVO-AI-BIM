@@ -586,7 +586,7 @@
                                 <TextBlock Text="The external tool must emit the documented levels/floors/walls JSON schema in metres. The engine validates it before preview."
                                            Style="{StaticResource MutedText}" Margin="0,6,0,0"
                                            Visibility="{Binding Generate.IsExternalPlanProvider, Converter={StaticResource BoolToVisibility}}" />
-                                <Grid Visibility="{Binding Generate.IsAstraProvider, Converter={StaticResource BoolToVisibility}}"
+                                <Grid Visibility="{Binding Generate.IsAstraByokProvider, Converter={StaticResource BoolToVisibility}}"
                                       Margin="0,4,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="190" />
@@ -598,9 +598,12 @@
                                              Text="{Binding Generate.AstraModelText, UpdateSourceTrigger=PropertyChanged}"
                                              IsEnabled="{Binding Generate.IsNotBusy}" />
                                 </Grid>
-                                <TextBlock Text="GPT-6 Astra is called from the local engine using OPENAI_API_KEY. The plan is validated before preview. API usage is billed by OpenAI."
+                                <TextBlock Text="Advanced mode: the local engine calls GPT-6 Astra with OPENAI_API_KEY. The plan is validated before preview. API usage is billed by OpenAI."
                                            Style="{StaticResource MutedText}" Margin="0,6,0,0"
-                                           Visibility="{Binding Generate.IsAstraProvider, Converter={StaticResource BoolToVisibility}}" />
+                                           Visibility="{Binding Generate.IsAstraByokProvider, Converter={StaticResource BoolToVisibility}}" />
+                                <TextBlock Text="Revo-managed subscription mode. The engine calls the Revo Astra gateway; the OpenAI key never enters the add-in. Sign-in/entitlement wiring is provided by the Revo service."
+                                           Style="{StaticResource MutedText}" Margin="0,6,0,0"
+                                           Visibility="{Binding Generate.IsAstraSubscriptionProvider, Converter={StaticResource BoolToVisibility}}" />
 
                                 <Grid Margin="0,16,0,0">
                                     <Grid.ColumnDefinitions>

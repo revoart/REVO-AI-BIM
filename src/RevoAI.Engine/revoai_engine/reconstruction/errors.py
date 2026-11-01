@@ -42,6 +42,24 @@ def provider_failed(message: str, *, data: str | None = None) -> PlanError:
     )
 
 
+def subscription_required(message: str, *, data: str | None = None) -> PlanError:
+    return PlanError(
+        ErrorCode.SUBSCRIPTION_REQUIRED,
+        message,
+        data=data,
+        remedy="Sign in to the Revo AI BIM subscription and restart Revit.",
+    )
+
+
+def subscription_quota_exceeded(message: str, *, data: str | None = None) -> PlanError:
+    return PlanError(
+        ErrorCode.SUBSCRIPTION_QUOTA_EXCEEDED,
+        message,
+        data=data,
+        remedy="Check the subscription usage limit or upgrade the plan.",
+    )
+
+
 def plan_invalid(message: str, *, data: str | None = None) -> PlanError:
     return PlanError(
         ErrorCode.PLAN_INVALID,

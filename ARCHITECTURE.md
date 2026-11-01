@@ -169,9 +169,12 @@ segmentation.json
 - The plan can come from the built-in geometric baseline, an external JSON file,
   or the GPT-6 Astra provider. External/Astra plans are bounds-checked against
   the scan and normalized before preview; they are never executed directly.
-- Astra uses the OpenAI Chat Completions JSON schema response format and
-  `OPENAI_API_KEY` from the engine process environment. The key is never logged
-  or written to the plan.
+- Astra has two paths: a Revo-managed subscription gateway (recommended; no
+  OpenAI key on the customer machine) and a BYO `OPENAI_API_KEY` developer mode.
+  The key is never logged or written to the plan.
+- The subscription gateway is configured with `REVOAI_ASTRA_GATEWAY_URL` and
+  `REVOAI_SUBSCRIPTION_TOKEN`; entitlement, quota and billing live in the Revo
+  backend. See `docs/subscription-architecture.md`.
 - Floors use ordered plane boundaries from segmentation; the current boundary
   is a convex hull, so concave spaces are simplified.
 - Walls use the longest boundary extent as a line. The base level is the nearest

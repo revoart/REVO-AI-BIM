@@ -62,6 +62,8 @@ class ErrorCode(IntEnum):
     ANALYSIS_NOT_FOUND = -32026
     PLAN_INVALID = -32027
     AI_PROVIDER_FAILED = -32028
+    SUBSCRIPTION_REQUIRED = -32029
+    SUBSCRIPTION_QUOTA_EXCEEDED = -32030
 
 
 class RpcError(BaseModel):
@@ -449,7 +451,9 @@ class SegmentationResult(CamelModel):
 
 class ReconstructionPlanParams(CamelModel):
     store_path: str = Field(min_length=1)
-    provider: Literal["geometric", "external", "astra"] = "geometric"
+    provider: Literal[
+        "geometric", "external", "astra", "astra_subscription"
+    ] = "geometric"
     external_plan_path: str | None = None
     astra_model: str = "gpt-6-astra"
     confidence_threshold: float = 0.75

@@ -32,6 +32,8 @@ def create_plan(params) -> dict[str, Any]:
     started = time.perf_counter()
     if params.provider == "astra":
         return _create_astra_plan(params, started)
+    if params.provider == "astra_subscription":
+        return _create_astra_subscription_plan(params, started)
     if params.external_plan_path:
         return _create_external_plan(params, started)
 
@@ -231,8 +233,51 @@ def _create_astra_plan(params, started: float) -> dict[str, Any]:
 
     from .astra import request_astra_plan
 
-    store = PointCloudStore.open(params.store_path)
-    segmentation = load_segmentation(params.store_path)
+    store, segmentation, context, element_count = _build_astra_context(
+        params.store_path
+    )
+    payload = request_astra_plan(context, model=params.astra_model)
+    return _normalize_external_plan(
+        payload,
+        store,
+        params,
+        started,
+        source_label=f"openai:{params.astra_model}",
+        source_parameters={
+            "astraModel": params.astra_model,
+            "astraElementCount": element_count,
+        },
+    )
+
+
+def _create_astra_subscription_plan(params, started: float) -> dict[str, Any]:
+    """Use the Revo-managed Astra gateway; no OpenAI key reaches the add-in."""
+
+    from .astra_subscription import request_subscription_plan
+
+    store, segmentation, context, element_count = _build_astra_context(
+        params.store_path
+    )
+    payload = request_subscription_plan(context)
+    return _normalize_external_plan(
+        payload,
+        store,
+        params,
+        started,
+        source_label="revo-subscription:gpt-6-astra",
+        source_parameters={
+            "astraModel": params.astra_model,
+            "astraElementCount": element_count,
+            "billing": "revo-subscription",
+        },
+    )
+
+
+def _build_astra_context(
+    store_path: str,
+) -> tuple[PointCloudStore, dict[str, Any], dict[str, Any], int]:
+    store = PointCloudStore.open(store_path)
+    segmentation = load_segmentation(store_path)
     elements = []
     for element in segmentation.get("elements", []):
         if float(element.get("confidence", 0.0)) < 0.3:
@@ -263,18 +308,7 @@ def _create_astra_plan(params, started: float) -> dict[str, Any]:
             "elements": elements,
         },
     }
-    payload = request_astra_plan(context, model=params.astra_model)
-    return _normalize_external_plan(
-        payload,
-        store,
-        params,
-        started,
-        source_label=f"openai:{params.astra_model}",
-        source_parameters={
-            "astraModel": params.astra_model,
-            "astraElementCount": len(elements),
-        },
-    )
+    return store, segmentation, context, len(elements)
 
 
 def _normalize_external_plan(

@@ -47,7 +47,8 @@ public sealed class ReconstructionViewModel : ObservableObject
         [
             "Geometric baseline",
             "External plan JSON",
-            "GPT-6 Astra (API)",
+            "GPT-6 Astra (subscription)",
+            "GPT-6 Astra (API key)",
         ];
 
         PreviewCommand = new AsyncRelayCommand(PreviewAsync, CanPreview);
@@ -116,14 +117,18 @@ public sealed class ReconstructionViewModel : ObservableObject
             if (SetProperty(ref _selectedProvider, value))
             {
                 OnPropertyChanged(nameof(IsExternalPlanProvider));
-                OnPropertyChanged(nameof(IsAstraProvider));
+                OnPropertyChanged(nameof(IsAstraByokProvider));
+                OnPropertyChanged(nameof(IsAstraSubscriptionProvider));
             }
         }
     }
 
     public bool IsExternalPlanProvider => SelectedProvider == "External plan JSON";
 
-    public bool IsAstraProvider => SelectedProvider == "GPT-6 Astra (API)";
+    public bool IsAstraByokProvider => SelectedProvider == "GPT-6 Astra (API key)";
+
+    public bool IsAstraSubscriptionProvider =>
+        SelectedProvider == "GPT-6 Astra (subscription)";
 
     public string ExternalPlanPath
     {
@@ -238,7 +243,7 @@ public sealed class ReconstructionViewModel : ObservableObject
             return;
         }
 
-        if (IsAstraProvider && string.IsNullOrWhiteSpace(AstraModelText))
+        if (IsAstraByokProvider && string.IsNullOrWhiteSpace(AstraModelText))
         {
             ErrorMessage = "Enter the GPT-6 Astra model id.";
             return;
@@ -452,7 +457,8 @@ public sealed class ReconstructionViewModel : ObservableObject
     private static string MapProvider(string label) => label switch
     {
         "External plan JSON" => "external",
-        "GPT-6 Astra (API)" => "astra",
+        "GPT-6 Astra (subscription)" => "astra_subscription",
+        "GPT-6 Astra (API key)" => "astra",
         _ => "geometric",
     };
 
