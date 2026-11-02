@@ -20,8 +20,11 @@ import numpy as np
 
 from .. import __version__
 from ..analysis import load_segmentation
+from ..analysis.snapshots import generate_snapshots
 from ..pointcloud import PointCloudStore
+from .deepseek import request_ai_schedule
 from .errors import plan_failed, plan_invalid
+from .schedule import normalize_schedule
 
 LOG = logging.getLogger("revoai.reconstruction")
 
@@ -33,6 +36,8 @@ _PLAN_FILE = "reconstruction-plan.json"
 
 def create_plan(params) -> dict[str, Any]:
     started = time.perf_counter()
+    if params.provider == "ai":
+        return _create_ai_plan(params, started)
     if params.provider == "astra":
         return _create_astra_plan(params, started)
     if params.provider == "astra_subscription":
@@ -307,6 +312,77 @@ def _create_external_plan(params, started: float) -> dict[str, Any]:
         source_label=str(source),
         source_parameters={"externalPlanPath": str(source)},
     )
+
+
+def _create_ai_plan(params, started: float) -> dict[str, Any]:
+    """Generate a measured BIM schedule from orthographic snapshots."""
+    store, segmentation, context, element_count = _build_astra_context(
+        params.store_path
+    )
+    snapshots = generate_snapshots(params.store_path)
+    knowledge = _build_knowledge_context(segmentation)
+    if knowledge is not None:
+        context["approvedKnowledge"] = {
+            "text": knowledge["text"],
+            "citations": knowledge["citations"],
+        }
+
+    schedule = request_ai_schedule(
+        context,
+        snapshots,
+        model=params.astra_model,
+    )
+    normalized = normalize_schedule(
+        schedule,
+        store_metadata=store.metadata,
+        source_label=f"deepseek:{params.astra_model}",
+    )
+    normalized["report"]["snapshots"] = {
+        "folder": snapshots.get("folder"),
+        "views": [
+            {
+                "name": view.get("name"),
+                "viewDirection": view.get("viewDirection"),
+                "rightAxis": view.get("rightAxis"),
+                "upAxis": view.get("upAxis"),
+                "metersPerPixel": view.get("metersPerPixel"),
+            }
+            for view in snapshots.get("views", [])
+        ],
+    }
+
+    result_path = store.path / _ANALYSIS_DIR / _PLAN_FILE
+    result = {
+        "scanId": store.metadata.get("scanId", store.path.name),
+        "storePath": str(store.path),
+        "method": normalized["method"],
+        "parameters": {
+            "provider": "ai",
+            "model": params.astra_model,
+            "snapshotFolder": snapshots.get("folder"),
+            "astraElementCount": element_count,
+            "confidenceThreshold": float(params.confidence_threshold),
+            "fallbackWallHeightMeters": float(params.fallback_wall_height_meters),
+            "levelToleranceMeters": float(params.level_tolerance_meters),
+            "maxElements": int(params.max_elements),
+        },
+        "levels": normalized["levels"],
+        "floors": normalized["floors"],
+        "walls": normalized["walls"],
+        "openings": normalized["openings"],
+        "roofs": normalized["roofs"],
+        "columns": normalized["columns"],
+        "stairs": normalized["stairs"],
+        "warnings": normalized["warnings"],
+        "report": normalized["report"],
+        "schedule": normalized["schedule"],
+        "resultPath": str(result_path),
+        "createdAt": _utc_now(),
+        "engineVersion": __version__,
+        "elapsedMs": round((time.perf_counter() - started) * 1000.0, 3),
+    }
+    _write_result(store.path, result)
+    return result
 
 
 def _create_astra_plan(params, started: float) -> dict[str, Any]:

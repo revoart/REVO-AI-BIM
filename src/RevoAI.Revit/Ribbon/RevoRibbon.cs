@@ -68,22 +68,6 @@ public static class RevoRibbon
             "About Revo AI BIM",
             "Version, Revit compatibility, engine protocol and log location."));
 
-        if (BuildInfo.InternalToolsEnabled)
-        {
-            var knowledgePanel = application.CreateRibbonPanel(TabName, "Knowledge");
-            knowledgePanel.AddItem(CreateButton<Commands.KnowledgeCommand>(
-                "RevoAIKnowledge", "Knowledge Library", assemblyPath, "review",
-                "Open the local BIM knowledge library",
-                "Internal Revo tooling for knowledge review and verified project extraction."));
-            knowledgePanel.AddItem(CreateButton<Commands.ExtractKnowledgeCommand>(
-                "RevoAIExtractKnowledge", "Extract Project", assemblyPath, "analysis",
-                "Extract the active project into the local knowledge library",
-                "Internal Revo tooling. Read-only extraction; the project is not modified."));
-            knowledgePanel.AddItem(CreateButton<Commands.ReferenceProbeCommand>(
-                "RevoAIReferenceProbe", "Reference Probe", assemblyPath, "generate",
-                "Diagnose point-cloud reference geometry",
-                "Internal diagnostic. Builds in-memory tessellation only."));
-        }
     }
 
     private static PushButtonData CreateButton<TCommand>(

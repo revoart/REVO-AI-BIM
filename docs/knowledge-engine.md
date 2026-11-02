@@ -89,21 +89,16 @@ revision (`supersedes_id`), and every review action is appended to `reviews`.
 | `knowledge.decision.add` | Record a retrieval decision |
 | `knowledge.benchmark.add` | Record benchmark metrics |
 
-## Workspace UI
+## Customer UI
 
-The new **Knowledge library** stage provides:
+**The Knowledge Library is permanently removed from the customer UI.** There is no
+Knowledge ribbon panel, workspace stage, transcript window or extraction command
+in the add-in. The storage, RPC, review, backup/export and retrieval backend remain
+available to internal Revo tooling and automated tests.
 
-- Library statistics and storage location.
-- Source import for documents and transcripts.
-- Read-only **Extract active project**.
-- Full-text search with status filtering.
-- Record details, procedure, API operations, constraints and limitations.
-- Provenance and review history.
-- Approve, reject and needs-correction actions.
-- Delete with retained review history.
-- Backup, export and open-folder actions.
-
-A ribbon **Knowledge** panel exposes **Knowledge Library** and **Extract Project**.
+The customer workspace is a small portrait tool with three steps: Scan, Analyse
+and Build. Approved knowledge can still be injected into the DeepSeek Go context
+by the backend, but the customer never sees the library.
 
 ## Revit project extraction
 

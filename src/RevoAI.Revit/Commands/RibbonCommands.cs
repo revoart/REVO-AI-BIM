@@ -53,54 +53,6 @@ public sealed class GenerateBimCommand : RevoCommandBase
 
 [Transaction(TransactionMode.Manual)]
 [Regeneration(RegenerationOption.Manual)]
-public sealed class KnowledgeCommand : RevoCommandBase
-{
-    protected override Result ExecuteCore(ExternalCommandData commandData)
-    {
-        WorkspaceController.ShowKnowledge(commandData.Application);
-        return Result.Succeeded;
-    }
-}
-
-[Transaction(TransactionMode.Manual)]
-[Regeneration(RegenerationOption.Manual)]
-public sealed class ExtractKnowledgeCommand : RevoCommandBase
-{
-    protected override Result ExecuteCore(ExternalCommandData commandData)
-    {
-        WorkspaceController.ExtractProjectKnowledge(commandData.Application);
-        return Result.Succeeded;
-    }
-}
-
-[Transaction(TransactionMode.Manual)]
-[Regeneration(RegenerationOption.Manual)]
-public sealed class ReferenceProbeCommand : RevoCommandBase
-{
-    protected override Result ExecuteCore(ExternalCommandData commandData)
-    {
-        var document = commandData.Application.ActiveUIDocument?.Document
-            ?? throw new InvalidOperationException("Open a project first.");
-        using var transaction = new Transaction(document, "Revo AI BIM - Reference probe");
-        transaction.Start();
-        try
-        {
-            RevitApi.PointCloudReferenceProbe.Run();
-        }
-        finally
-        {
-            if (transaction.HasStarted())
-            {
-                transaction.RollBack();
-            }
-        }
-
-        return Result.Succeeded;
-    }
-}
-
-[Transaction(TransactionMode.Manual)]
-[Regeneration(RegenerationOption.Manual)]
 public sealed class ModelReviewCommand : RevoCommandBase
 {
     protected override Result ExecuteCore(ExternalCommandData commandData) =>

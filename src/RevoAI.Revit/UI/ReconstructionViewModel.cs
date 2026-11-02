@@ -22,7 +22,7 @@ public sealed class ReconstructionViewModel : ObservableObject
     private string _fallbackWallHeightText = "2.7";
     private string _levelToleranceText = "0.25";
     private string _maxElementsText = "200";
-    private string _selectedProvider = "Geometric baseline";
+    private string _selectedProvider = "Revo AI (DeepSeek Go)";
     private string _externalPlanPath = string.Empty;
     private bool _markInferred;
     private string _statusMessage = "Create a plan to preview native floors and walls before building them.";
@@ -47,9 +47,8 @@ public sealed class ReconstructionViewModel : ObservableObject
 
         ProviderOptions =
         [
-            "Geometric baseline",
+            "Revo AI (DeepSeek Go)",
             "External plan JSON",
-            "Revo AI (subscription)",
         ];
 
         PreviewCommand = new AsyncRelayCommand(PreviewAsync, CanPreview);
@@ -126,7 +125,7 @@ public sealed class ReconstructionViewModel : ObservableObject
     public bool IsExternalPlanProvider => SelectedProvider == "External plan JSON";
 
     public bool IsAstraSubscriptionProvider =>
-        SelectedProvider == "Revo AI (subscription)";
+        SelectedProvider == "Revo AI (DeepSeek Go)";
 
     public string ExternalPlanPath
     {
@@ -544,7 +543,7 @@ public sealed class ReconstructionViewModel : ObservableObject
     private static string MapProvider(string label) => label switch
     {
         "External plan JSON" => "external",
-        "Revo AI (subscription)" => "astra_subscription",
+        "Revo AI (DeepSeek Go)" => "ai",
         _ => "geometric",
     };
 

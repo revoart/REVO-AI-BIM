@@ -113,6 +113,22 @@ Not yet implemented: embeddings/vector search, automatic YouTube ingestion, PDF
 parsing, benchmark UI and any dimensional-accuracy claim. Live Astra remains
 blocked without credentials or the subscription backend.
 
+## Phase 5.3 deliverables (implemented)
+
+- Small portrait workspace (430×820) with three usage steps and a point-cloud
+  control. Technical tables, engine diagnostics and knowledge UI removed.
+- DeepSeek Go provider with configurable endpoint and key.
+- Orthographic plan and four elevation depth snapshots with axes/scale metadata.
+- AI schedule contract validated before Revit, covering walls, slabs, openings,
+  doors, windows, roofs and columns.
+- Native builder: slabs, thickness-specific walls, hosted doors/windows, flat
+  roofs and columns (when a family is loaded).
+- Revit 2027 builder probe passed: 1 slab, 4 walls, 2 openings, 1 roof.
+- Knowledge Library is backend-only; no customer-facing UI.
+
+Not yet implemented: live DeepSeek Go run, pitched/gable roof slopes, stairs,
+family-type dimension matching, and cloud-to-model verification.
+
 ## Product milestone definition
 
 Phase 5 is the first commercially meaningful milestone: a real E57 residential

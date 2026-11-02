@@ -1,6 +1,6 @@
 # Phase 5 Completion Report — Native Walls and Floors
 
-**Version:** 0.7.1  
+**Version:** 0.8.0  
 **Date:** 2026-11-01  
 **Status:** Implemented and automatically verified. Import, analysis and
 generation now share one staged Workspace window. Native geometry creation in
@@ -84,7 +84,7 @@ not a wall-creation test.
 
 ## 5. Manual verification required
 
-1. Install 0.7.1 for Revit 2026 and 2027.
+1. Install 0.8.0 for Revit 2026 and 2027.
 2. On the unsigned-add-in security prompt choose **Always Load**; choosing
    "Do Not Load" hides the Revo tab.
 3. Import a scan and confirm the **Revo Point Cloud Reference** appears in a 3D

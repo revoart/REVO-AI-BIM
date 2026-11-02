@@ -1,7 +1,11 @@
 # External BIM Plan Contract
 
+> **Current provider:** the Build stage uses **DeepSeek Go** with orthographic
+> plan/elevation snapshots. This document describes the JSON file contract and the
+> legacy provider compatibility path.
+
 Revo AI BIM can consume a floor/wall plan produced by an external AI tool
-(Claude, GPT-6 Astra, or a custom model) instead of the built-in geometric
+(Claude, DeepSeek Go, or a custom model) instead of the built-in geometric
 baseline.
 
 There are two integration modes:

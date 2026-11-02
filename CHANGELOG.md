@@ -3,6 +3,62 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.8.0] - 2026-11-02 - AI schedule, portrait tool and native openings/roof
+
+### Added
+
+- **DeepSeek Go** AI provider with an OpenAI-compatible endpoint. Configure with
+  `DEEPSEEK_API_KEY` (or `REVOAI_AI_API_KEY`) and optionally
+  `REVOAI_AI_MODEL` / `REVOAI_AI_BASE_URL`.
+- Orthographic depth snapshots: plan, south, north, west and east, with axes,
+  scale and bounds in `snapshots.json`. The AI receives the measured metadata and
+  the images.
+- AI schedule contract for levels, walls, floors/slabs, openings, doors, windows,
+  roofs, columns and stairs. The schedule is validated locally before Revit.
+- Native builder now creates:
+  - Floor slabs
+  - Walls with duplicated thickness-specific wall types
+  - Hosted doors and windows in wall openings
+  - Flat roofs
+  - Columns when a column family is loaded
+- **Small portrait Workspace**: 430×820, three simple steps (Scan, Analyse,
+  Build) plus a point-cloud control. Technical tables, engine diagnostics,
+  stage navigation, plan tables and subscription/knowledge panels were removed.
+- Build gate blocks assumed units, missing floors and incoherent floor counts.
+
+### Changed
+
+- **Knowledge Library is permanently removed from the customer UI.** The ribbon
+  panel, workspace stage, transcript window and extractor command are gone. The
+  backend knowledge store and RPC remain available.
+- The Build stage defaults to **Revo AI (DeepSeek Go)**. The model reads measured
+  metadata and snapshots, then returns a schedule.
+- Wall heights use measured ceilings first, then level spacing, then fallback.
+- Floor planes closer than 1.2 m are merged; the largest slab per level is used.
+- PLY/XYZ imports require an explicit unit; Auto is blocked.
+
+### Verified
+
+- **Revit 2027 native builder probe passed:** 1 slab, 4 walls, 2 hosted openings
+  (door + window) and 1 roof were created and rolled back.
+- 80 Python tests pass.
+- 37 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the compact Workspace, Settings and About windows.
+
+### Known gaps
+
+- **Live DeepSeek Go is not tested** because no API key is configured. The provider,
+  image payload, text-only fallback and schedule validator are tested with fakes.
+- Pitched roofs are currently created as **flat roofs** with a warning.
+- Stairs are not built.
+- Columns require a loaded column family; otherwise they are skipped with a warning.
+- Door/window dimensions depend on the loaded family type; the schedule opening is
+  cut by the hosted family, but the leaf/frame size may differ.
+- The point-cloud overlay still has the Revit 2027 tessellation issue; the line
+  fallback is implemented but not verified.
+- No cloud-to-model distance verification or accuracy claim is made.
+
 ## [0.7.1] - 2026-11-02 - Accuracy gate, hidden knowledge and measurement reports
 
 ### Added

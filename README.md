@@ -6,24 +6,20 @@ Revo AI BIM converts laser-scanned buildings into editable, native Revit
 elements. The product is built in ten gated phases; each phase is implemented,
 tested and reviewed before the next begins.
 
-> **Current status: Phase 5 plus the local knowledge engine. E57, LAS, LAZ, PLY
-> and XYZ/TXT scans can be imported, analysed into floor/ceiling/wall instances,
-> and converted into a previewable plan for native Revit floors and walls.
-> Import, analysis, generation and subscription are the customer-facing stages.
-> Knowledge storage, review and extraction are backend/internal tools hidden
-> behind `REVOAI_INTERNAL_TOOLS=1`. A real 27.8-million-point E57 import is
-> verified in Revit 2027; native geometry creation and the Scan Analysis UI still
-> need manual in-Revit verification.**
+> **Current status: AI schedule prototype. E57, LAS, LAZ, PLY and XYZ/TXT scans
+> can be imported, analysed into floor/ceiling/wall instances, and converted into
+> a measured schedule for native Revit slabs, walls, hosted doors/windows and
+> roofs. The workspace is now a small portrait tool with three steps. The
+> Knowledge Library has been removed from the customer UI. DeepSeek Go is the
+> default AI provider; a key must be configured before a live AI run.**
 >
 > This is not a trained neural network. Revit shows a sampled **point-cloud
 > reference** made of model markers, not a native RCP/RCS scan; it is a visual
-> aid, not measured point data. Generated floors and walls are inferred from a
-> deterministic geometric baseline, not measured accuracy. **The current
-> geometric baseline is not dimensionally accurate.** Native generation is now
-> blocked when the unit is assumed, wall heights are all fallback values, or the
-> floor/level result is incoherent. The knowledge library is local SQLite/FTS5
-> with human review; approved knowledge can guide Astra, but scan evidence
-> remains authoritative.
+> aid, not measured point data. Generated geometry is inferred from the scan and
+> schedule, not a measured accuracy guarantee. Native generation is blocked when
+> the unit is assumed, floors are missing, or the floor/level result is
+> incoherent. Approved knowledge can guide the AI in the backend, but scan
+> evidence remains authoritative.
 
 ## What exists today
 
@@ -46,11 +42,11 @@ tested and reviewed before the next begins.
 | Real Scan Analysis stage and workspace metrics | Done, XAML probe passed; in-Revit check pending |
 | Reconstruction plan with levels, floor polygons and wall lines | Done, tested |
 | Native Revit floor and wall creation with inferred-element marking | Implemented; manual in-Revit check pending |
-| Model-visible point-cloud reference with top-bar and sidebar show/hide controls | Known issue: Revit 2027 tessellation build fails; diagnostic in progress |
-| Native build safety gate (units, heights, floor coherence) | Implemented; blocks unreliable plans |
-| Local knowledge library (SQLite + FTS5, provenance, review, backup/export) | Backend/internal; hidden from customer UI |
-| Read-only Revit project extraction into the knowledge library | Backend/internal; manual in-Revit extraction verified on a two-level project |
-| Approved-knowledge retrieval for Astra planning | Implemented; tested with fakes; live Astra blocked without credentials |
+| Model-visible point-cloud reference with show/hide control | Known issue: Revit 2027 tessellation build fails; line fallback unverified |
+| Native build safety gate (units, floors, coherence) | Implemented; blocks unreliable plans |
+| Native slabs, walls, hosted doors/windows and flat roofs | Implemented; Revit 2027 builder probe passed |
+| DeepSeek Go AI schedule from plan/elevation snapshots | Implemented; live API not tested without a key |
+| Local knowledge library (SQLite + FTS5, provenance, review, backup/export) | Backend only; permanently removed from the customer UI |
 | Unit conversion kernel (metres ↔ feet ↔ mm/in/US survey feet) | Done, tested |
 | Structured logging, configuration, error model | Done |
 | Trained ML, doors/windows, native RCP/RCS point-cloud import | **Not started** |
@@ -136,11 +132,12 @@ previews native floors and walls and creates them in one Revit transaction after
 confirmation. Created elements are marked `REVO-INFERRED`; no geometry is created
 until the user clicks **Create in Revit**.
 
-The Generate BIM stage can also validate and consume a JSON plan produced by an
-external AI tool such as Claude or GPT-6 Astra. GPT-6 Astra can be called
-through a Revo-managed subscription gateway (recommended). Claude currently uses
-the file contract. The Workspace has a **Subscription** page with Personal,
-Commercial and Enterprise pricing and a yearly 10% discount. See
+The Build stage uses **DeepSeek Go** through an OpenAI-compatible endpoint. Set
+`DEEPSEEK_API_KEY` (or `REVOAI_AI_API_KEY`) before starting Revit. The engine
+generates plan and elevation depth snapshots, sends them with measured metadata,
+validates the returned schedule and only then builds native slabs, walls, hosted
+doors/windows and roofs. External plan JSON remains available for testing. See
+[docs/scan-to-bim-agent.md](docs/scan-to-bim-agent.md),
 [docs/external-bim-plan.md](docs/external-bim-plan.md) and
 [docs/subscription-architecture.md](docs/subscription-architecture.md).
 

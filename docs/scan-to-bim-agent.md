@@ -103,12 +103,13 @@ so; do not silently skip.
 | Levels, floors, walls in Revit | Implemented with a safety gate |
 | Unit confirmation for PLY/XYZ | Implemented; Auto is blocked |
 | Wall thickness measurement | Not implemented; assumed default type |
-| Openings, doors, windows | Not implemented; listed as unavailable |
-| Ceilings, roofs, columns, stairs | Not implemented; listed as unavailable |
+| Openings, doors, windows | Implemented as hosted families; family type dependent |
+| Ceilings, roofs, columns, stairs | Roofs flat only; columns need a family; ceilings/stairs not built |
 | Measurement report with units/datum/axes/assumptions/VERIFY | Implemented in the plan JSON |
 | Build blocking for assumed units/incoherent floors | Implemented |
+| Orthographic depth snapshots | Implemented (plan + four elevations) |
+| DeepSeek Go schedule provider | Implemented; live API not tested without a key |
 | Cloud-to-model distance verification | Not implemented; no accuracy claim |
-| Orthographic projection measurement | Not implemented |
 | Point-cloud overlay | Known issue: tessellation build fails in Revit 2027; line fallback unverified |
 
 The agent must not claim the unimplemented capabilities. It can still produce a

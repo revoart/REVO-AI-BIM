@@ -143,6 +143,23 @@ report contains test evidence.
 - [ ] Embeddings/vector search (deferred: Python 3.14 dependency gap)
 - [ ] Benchmark UI and a verified point-cloud/RVT pair
 
+## Phase 5.3 - AI schedule and compact UI
+
+- [x] Portrait 430×820 Workspace with Scan, Analyse and Build steps
+- [x] Knowledge Library permanently removed from the customer UI
+- [x] DeepSeek Go provider (`deepseek-go`, configurable endpoint/key)
+- [x] Plan + four elevation depth snapshots with axes and scale metadata
+- [x] AI schedule contract for levels, walls, floors, openings, roofs, columns
+- [x] Native slabs, walls, hosted doors/windows and flat roofs
+- [x] Columns when a column family is loaded
+- [x] Build safety gate for assumed units and incoherent floors
+- [x] Revit 2027 builder probe: 1 slab, 4 walls, 2 openings, 1 roof
+- [ ] Live DeepSeek Go run (needs an API key)
+- [ ] Pitched/gable roof slopes
+- [ ] Stair creation
+- [ ] Door/window family-type dimension matching
+- [ ] Manual Revit 2026 UI and builder test
+
 ## Phases 6–10
 
 Not started. See `ROADMAP.md`.

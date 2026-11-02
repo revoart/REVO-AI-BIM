@@ -5,20 +5,19 @@ This file is deliberately blunt. Anything listed here is **not working** or
 
 ## Product scope (current)
 
-1. **The geometric reconstruction is not dimensionally accurate.** It creates
-   levels, floor polygons and wall centrelines from RANSAC planes, but it does not
-   level or yaw-correct the scan, measure wall thickness, detect openings, or
-   verify cloud-to-model distance. The current output has produced implausible
-   20-floor/15-wall plans. Native generation is now blocked when the unit is
-   assumed, every wall height is fallback, no floor is measured, or the floor
-   count is incoherent. Do not present the baseline as an accurate BIM model.
+1. **The geometric baseline is not dimensionally accurate; the AI schedule is
+   not live-tested.** The old baseline creates levels, floor polygons and wall
+   centrelines from RANSAC planes and has produced implausible 20-floor/15-wall
+   plans. Native generation is blocked when the unit is assumed, no floor is
+   measured, or the floor count is incoherent. The new DeepSeek Go path generates
+   plan/elevation snapshots and validates an AI schedule, but it has only been
+   tested with fakes because no API key is configured.
 2. **No RCP/RCS support.** Those formats require a verified Autodesk workflow
    and are not accepted by the importer.
 3. **The sampled point-cloud reference is currently broken in Revit 2027.**
    `TessellatedShapeBuilder.Build()` throws `InternalException` during real
-   testing. The reference is intended to be a visual aid only, never native scan
-   data or a measured surface. Do not claim the overlay works until the probe and
-   a real import succeed.
+   testing. A line-based fallback is implemented but not verified. It is a visual
+   aid only, never native scan data or a measured surface.
 4. **No trained ML.** Scan Analysis is a deterministic geometric RANSAC
    baseline. There is no neural network, training dataset or learned model.
 5. **Limited BIM reconstruction.** Phase 5 can create native floors and walls
@@ -136,6 +135,24 @@ This file is deliberately blunt. Anything listed here is **not working** or
 32. **The knowledge UI and project extractor need manual in-Revit checks.**
     Automated tests cover storage, RPC and contract behavior, not the WPF/Revit
     interaction.
+
+33. **DeepSeek Go is not live-tested.** The provider, image payload, text-only
+    fallback and schedule validation are tested with fakes. A real run requires
+    `DEEPSEEK_API_KEY` (or `REVOAI_AI_API_KEY`), network access and a multimodal
+    or text-only response from the configured model.
+34. **Pitched roofs are created flat.** The builder uses a footprint roof and
+    warns when the schedule pitch is greater than 1°. Gable/hip slope assignment
+    is not implemented.
+35. **Columns require a loaded column family.** If none is loaded, columns are
+    skipped with a warning. Column height uses the family default.
+36. **Stairs are not built.** The AI schedule may list stairs; the builder records
+    a warning and skips them.
+37. **Door/window sizes depend on the loaded family type.** The hosted family cuts
+    a real opening in the wall, but its leaf/frame dimensions may differ from the
+    schedule. Verify the type and dimensions.
+38. **The Knowledge Library is backend-only.** All customer-facing knowledge UI
+    has been removed; there is no Knowledge ribbon panel, workspace stage,
+    transcript window or extraction command. The backend tables and RPC remain.
 
 ## Accuracy gate (0.7.1)
 

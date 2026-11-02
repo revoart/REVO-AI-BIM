@@ -176,8 +176,12 @@ segmentation.json
 
 - Plan creation is read-only. It writes JSON beside the scan.
 - The plan can come from the built-in geometric baseline, an external JSON file,
-  or the GPT-6 Astra provider. External/Astra plans are bounds-checked against
-  the scan and normalized before preview; they are never executed directly.
+  or the DeepSeek Go AI provider. AI plans are bounds-checked against the scan
+  and normalized before preview; they are never executed directly.
+- DeepSeek Go uses an OpenAI-compatible endpoint (`DEEPSEEK_API_KEY` or
+  `REVOAI_AI_API_KEY`). The engine generates plan/elevation snapshots and sends
+  measured metadata plus the images. A text-only fallback is used when images are
+  rejected.
 - Astra has two paths: a Revo-managed subscription gateway (recommended; no
   OpenAI key on the customer machine) and a BYO `OPENAI_API_KEY` developer mode.
   The key is never logged or written to the plan.
@@ -207,7 +211,7 @@ segmentation.json
 
 ## 12. Versioning
 
-- Product version follows SemVer (`0.7.1`).
+- Product version follows SemVer (`0.8.0`).
 - Assembly/file versions mirror it.
 - Protocol has an independent `MAJOR.MINOR`.
 - Each Revit version gets its own build output folder
@@ -224,9 +228,10 @@ segmentation.json
 - `Import scan`, `Analyze scan` and `Generate BIM` are stage views inside that
   single window, selected from the sidebar or the ribbon. No separate process
   window is opened.
-- The `Knowledge library` stage is also inside the workspace. It searches the
-  local SQLite/FTS5 store, reviews records and invokes the read-only project
-  extractor. A separate `KnowledgeTranscriptWindow` collects source metadata.
+- The Workspace is a small portrait tool with three steps: Scan, Analyse and
+  Build. Technical tables, engine diagnostics and stage navigation are removed.
+- The **Knowledge Library is backend-only**; there is no customer-facing
+  knowledge stage, ribbon panel or transcript window.
 - Import sends the file to `pointcloud.import` and displays metadata.
 - Analysis calls `segmentation.run` and displays segments/confidence.
 - Generate previews the plan. **Create in Revit** runs `ModelBuilder.Create`
@@ -271,6 +276,8 @@ knowledge source (transcript / document / read-only RVT extraction)
   saves or closes the document.
 - Astra retrieval adds only approved, citable context. The scan evidence remains
   authoritative. Retrieval IDs and the plan summary are recorded in `decisions`.
+- The library is **backend-only**; all customer-facing knowledge UI has been
+  removed.
 - Backups are checksummed ZIPs; exports are JSONL with full provenance.
 - No network access is required for storage, search, review, extraction, backup
   or export. Video and documentation ingestion is manual and user-authorized.

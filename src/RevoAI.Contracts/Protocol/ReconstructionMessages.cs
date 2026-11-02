@@ -13,7 +13,7 @@ public sealed class ReconstructionPlanParams
     /// <summary>Optional JSON plan produced by an external AI tool.</summary>
     public string? ExternalPlanPath { get; init; }
 
-    public string AstraModel { get; init; } = "gpt-6-astra";
+    public string AstraModel { get; init; } = "deepseek-go";
 
     public double ConfidenceThreshold { get; init; } = 0.75;
 
@@ -50,6 +50,8 @@ public sealed class PlanFloor
     public required double Confidence { get; init; }
 
     public string Source { get; init; } = "MEASURED";
+
+    public double ThicknessMeters { get; init; } = 0.2;
 }
 
 public sealed class PlanWall
@@ -74,6 +76,66 @@ public sealed class PlanWall
     public string Source { get; init; } = "MEASURED";
 
     public bool Verify { get; init; }
+
+    public double ThicknessMeters { get; init; } = 0.2;
+}
+
+public sealed class PlanOpening
+{
+    public required string Id { get; init; }
+
+    public required string HostWallId { get; init; }
+
+    /// <summary>door or window.</summary>
+    public required string Kind { get; init; }
+
+    public required double CenterMeters { get; init; }
+
+    public required double WidthMeters { get; init; }
+
+    public required double SillMeters { get; init; }
+
+    public required double HeadMeters { get; init; }
+
+    public string Source { get; init; } = "ASSUMED";
+
+    public bool Verify { get; init; } = true;
+}
+
+public sealed class PlanRoof
+{
+    public required string Id { get; init; }
+
+    public required string LevelId { get; init; }
+
+    public required IReadOnlyList<double[]> Boundary { get; init; }
+
+    public double PitchDegrees { get; init; }
+
+    public double ThicknessMeters { get; init; } = 0.2;
+
+    public string Source { get; init; } = "ASSUMED";
+
+    public bool Verify { get; init; } = true;
+}
+
+public sealed class PlanColumn
+{
+    public required string Id { get; init; }
+
+    public required string LevelId { get; init; }
+
+    public required double[] Center { get; init; }
+
+    public double WidthMeters { get; init; } = 0.3;
+
+    public double DepthMeters { get; init; } = 0.3;
+
+    public double HeightMeters { get; init; } = 2.7;
+
+    public string Source { get; init; } = "ASSUMED";
+
+    public bool Verify { get; init; } = true;
 }
 
 /// <summary>Revit-ready floor and wall descriptors. No Revit objects have been created.</summary>
@@ -92,6 +154,12 @@ public sealed class ReconstructionPlanResult
     public required IReadOnlyList<PlanFloor> Floors { get; init; }
 
     public required IReadOnlyList<PlanWall> Walls { get; init; }
+
+    public IReadOnlyList<PlanOpening> Openings { get; init; } = [];
+
+    public IReadOnlyList<PlanRoof> Roofs { get; init; } = [];
+
+    public IReadOnlyList<PlanColumn> Columns { get; init; } = [];
 
     public required IReadOnlyList<string> Warnings { get; init; }
 
