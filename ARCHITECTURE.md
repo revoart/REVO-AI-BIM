@@ -211,7 +211,7 @@ segmentation.json
 
 ## 12. Versioning
 
-- Product version follows SemVer (`0.8.0`).
+- Product version follows SemVer (`0.8.1`).
 - Assembly/file versions mirror it.
 - Protocol has an independent `MAJOR.MINOR`.
 - Each Revit version gets its own build output folder

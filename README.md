@@ -6,12 +6,12 @@ Revo AI BIM converts laser-scanned buildings into editable, native Revit
 elements. The product is built in ten gated phases; each phase is implemented,
 tested and reviewed before the next begins.
 
-> **Current status: AI schedule prototype. E57, LAS, LAZ, PLY and XYZ/TXT scans
-> can be imported, analysed into floor/ceiling/wall instances, and converted into
-> a measured schedule for native Revit slabs, walls, hosted doors/windows and
-> roofs. The workspace is now a small portrait tool with three steps. The
-> Knowledge Library has been removed from the customer UI. DeepSeek Go is the
-> default AI provider; a key must be configured before a live AI run.**
+> **Current status: AI schedule prototype with a visible step-by-step Revit
+> build. The portrait tool has three steps: Scan, Analyse and Build. DeepSeek Go
+> generates a measured schedule from plan/elevation snapshots, then Revit commits
+> levels, slabs, walls, hosted doors/windows, roofs and columns stage by stage so
+> the user can watch the model appear. The Knowledge Library is permanently
+> removed from the customer UI.**
 >
 > This is not a trained neural network. Revit shows a sampled **point-cloud
 > reference** made of model markers, not a native RCP/RCS scan; it is a visual
@@ -45,6 +45,7 @@ tested and reviewed before the next begins.
 | Model-visible point-cloud reference with show/hide control | Known issue: Revit 2027 tessellation build fails; line fallback unverified |
 | Native build safety gate (units, floors, coherence) | Implemented; blocks unreliable plans |
 | Native slabs, walls, hosted doors/windows and flat roofs | Implemented; Revit 2027 builder probe passed |
+| Visible stage-by-stage AI build with progress | Implemented; commits levels, slabs, walls, openings, roofs and columns separately |
 | DeepSeek Go AI schedule from plan/elevation snapshots | Implemented; live API not tested without a key |
 | Local knowledge library (SQLite + FTS5, provenance, review, backup/export) | Backend only; permanently removed from the customer UI |
 | Unit conversion kernel (metres ↔ feet ↔ mm/in/US survey feet) | Done, tested |

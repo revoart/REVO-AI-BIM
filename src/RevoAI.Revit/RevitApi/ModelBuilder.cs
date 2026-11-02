@@ -8,7 +8,7 @@ namespace RevoAI.Revit.RevitApi;
 /// Creates native Revit floors and walls from a reconstruction plan. Every call
 /// must run on Revit's main thread. The caller owns the transaction.
 /// </summary>
-public static class ModelBuilder
+public static partial class ModelBuilder
 {
     public static ReconstructionBuildResult Create(
         UIApplication app,

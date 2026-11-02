@@ -151,6 +151,8 @@ report contains test evidence.
 - [x] Plan + four elevation depth snapshots with axes and scale metadata
 - [x] AI schedule contract for levels, walls, floors, openings, roofs, columns
 - [x] Native slabs, walls, hosted doors/windows and flat roofs
+- [x] Visible incremental build with per-stage transactions and 3D view follow
+- [x] One-click **Build with AI** (preview then build)
 - [x] Columns when a column family is loaded
 - [x] Build safety gate for assumed units and incoherent floors
 - [x] Revit 2027 builder probe: 1 slab, 4 walls, 2 openings, 1 roof

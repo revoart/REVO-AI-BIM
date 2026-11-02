@@ -131,8 +131,11 @@
                         <Button Content="{Binding Generate.BuildButtonText}"
                                 Command="{Binding Generate.BuildCommand}"
                                 Style="{StaticResource CompactButton}" Margin="0,6,0,0" />
-                        <ProgressBar Height="4" IsIndeterminate="True" Margin="0,8,0,0"
+                        <ProgressBar Height="4" Minimum="0" Maximum="100"
+                                     Value="{Binding Generate.BuildProgressValue}" Margin="0,8,0,0"
                                      Visibility="{Binding Generate.IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                        <TextBlock Text="{Binding Generate.BuildProgressText}" Style="{StaticResource MutedText}"
+                                   FontSize="10" Margin="0,3,0,0" />
                         <TextBlock Text="{Binding Generate.PlanSummary}" Style="{StaticResource MutedText}"
                                    TextWrapping="Wrap" FontSize="10.5" Margin="0,8,0,0"
                                    Visibility="{Binding Generate.HasPlan, Converter={StaticResource BoolToVisibility}}" />

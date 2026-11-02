@@ -3,6 +3,46 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.8.1] - 2026-11-02 - Visible step-by-step AI build
+
+### Added
+
+- **Build with AI** runs the DeepSeek Go preview automatically when no plan is
+  ready, then builds without a separate click.
+- Incremental Revit build:
+  1. Levels
+  2. Slabs
+  3. Walls
+  4. Hosted doors and windows
+  5. Roofs
+  6. Columns
+- Each stage commits in its own transaction, so the model appears while the user
+  watches.
+- The active 3D view is opened and zoomed to the newly created elements after each
+  stage.
+- A determinate build progress bar and stage text in the portrait Build card.
+
+### Changed
+
+- Build failure now stops the current stage and leaves earlier geometry in place.
+  The status tells the user to review and use Undo if needed.
+- Build button labels are `Build with AI`, `Build in Revit` and
+  `Measurements incomplete`.
+
+### Verified
+
+- 80 Python tests pass.
+- 37 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the compact Workspace.
+
+### Known gaps
+
+- Live DeepSeek Go still needs an API key.
+- Partial builds are not automatically rolled back.
+- Pitched roofs are flat; stairs are not built; columns need a family.
+- Point-cloud overlay remains a known Revit 2027 issue.
+
 ## [0.8.0] - 2026-11-02 - AI schedule, portrait tool and native openings/roof
 
 ### Added

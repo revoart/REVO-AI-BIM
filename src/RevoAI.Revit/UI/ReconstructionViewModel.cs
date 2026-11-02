@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Windows.Input;
+using Autodesk.Revit.UI;
 using RevoAI.Contracts.Protocol;
 using RevoAI.Revit.Configuration;
 using RevoAI.Revit.Engine;
@@ -31,6 +32,8 @@ public sealed class ReconstructionViewModel : ObservableObject
     private string _planSummary = string.Empty;
     private string _blockingIssuesText = string.Empty;
     private bool _isBuildable = true;
+    private double _buildProgressValue;
+    private string _buildProgressText = string.Empty;
     private bool _isBusy;
     private ReconstructionPlanResult? _plan;
 
@@ -193,6 +196,18 @@ public sealed class ReconstructionViewModel : ObservableObject
 
     public bool HasBlockingIssues => !IsBuildable && !string.IsNullOrWhiteSpace(BlockingIssuesText);
 
+    public double BuildProgressValue
+    {
+        get => _buildProgressValue;
+        private set => SetProperty(ref _buildProgressValue, value);
+    }
+
+    public string BuildProgressText
+    {
+        get => _buildProgressText;
+        private set => SetProperty(ref _buildProgressText, value);
+    }
+
     public bool IsBusy
     {
         get => _isBusy;
@@ -214,7 +229,8 @@ public sealed class ReconstructionViewModel : ObservableObject
 
     public string PreviewButtonText => IsBusy ? "Working…" : "Create preview";
 
-    public string BuildButtonText => IsBusy ? "Working…" : IsBuildable ? "Create in Revit" : "Measurements incomplete";
+    public string BuildButtonText =>
+        IsBusy ? "Building…" : Plan is null ? "Build with AI" : IsBuildable ? "Build in Revit" : "Measurements incomplete";
 
     public ReconstructionPlanResult? Plan
     {
@@ -224,6 +240,7 @@ public sealed class ReconstructionViewModel : ObservableObject
             if (SetProperty(ref _plan, value))
             {
                 OnPropertyChanged(nameof(HasPlan));
+                OnPropertyChanged(nameof(BuildButtonText));
                 (BuildCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 (OpenStoreFolderCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
@@ -235,7 +252,9 @@ public sealed class ReconstructionViewModel : ObservableObject
     private bool CanPreview() =>
         !IsBusy && !string.IsNullOrWhiteSpace(StorePath) && Directory.Exists(StorePath);
 
-    private bool CanBuild() => !IsBusy && Plan is not null && _runner is not null && IsBuildable;
+    private bool CanBuild() =>
+        !IsBusy && _runner is not null && !string.IsNullOrWhiteSpace(StorePath) &&
+        Directory.Exists(StorePath);
 
     private async Task PreviewAsync()
     {
@@ -358,9 +377,29 @@ public sealed class ReconstructionViewModel : ObservableObject
 
     private void Build()
     {
-        if (IsBusy || Plan is null)
+        if (IsBusy)
         {
             return;
+        }
+
+        if (_runner is null)
+        {
+            ErrorMessage = "The Revit task runner is not available.";
+            return;
+        }
+
+        _ = BuildWithAiAsync();
+    }
+
+    private async Task BuildWithAiAsync()
+    {
+        if (Plan is null)
+        {
+            await PreviewAsync();
+            if (Plan is null || !IsBuildable)
+            {
+                return;
+            }
         }
 
         if (!IsBuildable)
@@ -371,25 +410,37 @@ public sealed class ReconstructionViewModel : ObservableObject
             return;
         }
 
-        if (_runner is null)
-        {
-            ErrorMessage = "The Revit task runner is not available.";
-            return;
-        }
-
         IsBusy = true;
         ErrorMessage = string.Empty;
-        StatusMessage = "Creating native floors and walls in Revit…";
+        BuildProgressValue = 0;
+        BuildProgressText = "Preparing build";
+        StatusMessage = "Building in Revit. The model will appear stage by stage.";
 
-        _ = BuildAsync(Plan);
-    }
+        var plan = Plan!;
+        var session = new BuildSession(plan);
 
-    private async Task BuildAsync(ReconstructionPlanResult plan)
-    {
         try
         {
-            var result = await _runner!.InvokeAsync(app =>
-                ModelBuilder.Create(app, plan, MarkInferred));
+            await RunBuildStep("Creating levels", 5, app => ModelBuilder.CreateLevels(app, session), session);
+            await RunBuildStep("Creating slabs", 20, app => ModelBuilder.CreateSlabs(app, session), session);
+            await RunBuildStep("Creating walls", 40, app => ModelBuilder.CreateWalls(app, session), session);
+            await RunBuildStep("Hosting doors and windows", 65, app => ModelBuilder.CreateOpenings(app, session), session);
+            await RunBuildStep("Creating roofs", 80, app => ModelBuilder.CreateRoofs(app, session), session);
+            await RunBuildStep("Creating columns", 90, app => ModelBuilder.CreateColumns(app, session), session);
+
+            BuildProgressValue = 100;
+            BuildProgressText = "Build complete";
+            var result = new ReconstructionBuildResult(
+                session.Floors,
+                session.CreatedWalls,
+                session.CreatedLevels,
+                session.Warnings,
+                $"Created {session.Floors.Count} slab(s), {session.CreatedWalls.Count} wall(s), " +
+                $"{session.Openings.Count} opening(s), {session.Roofs.Count} roof(s), " +
+                $"{session.Columns.Count} column(s) and {session.CreatedLevels.Count} level(s).",
+                session.Openings,
+                session.Roofs,
+                session.Columns);
             WarningsText = result.Warnings.Count == 0
                 ? "No build warnings."
                 : string.Join(Environment.NewLine, result.Warnings.Select(warning => "• " + warning));
@@ -408,13 +459,30 @@ public sealed class ReconstructionViewModel : ObservableObject
         catch (Exception ex)
         {
             ErrorMessage = ex.Message;
-            StatusMessage = "BIM generation failed. The Revit transaction was rolled back.";
-            RevoLog.Error("BIM generation failed.", ex);
+            StatusMessage =
+                "Build stopped. Geometry created before the failure remains in the model; " +
+                "review the error and use Undo if needed.";
+            RevoLog.Error("Incremental BIM generation failed.", ex);
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private async Task RunBuildStep(
+        string label,
+        double progress,
+        Func<UIApplication, int> step,
+        BuildSession session)
+    {
+        BuildProgressText = label;
+        BuildProgressValue = progress;
+        StatusMessage = label + "…";
+        var count = await _runner!.InvokeAsync(step);
+        BuildProgressText = $"{label}: {count}";
+        await _runner.InvokeAsync(app => ModelBuilder.ShowBuildProgress(app, session));
+        await Task.Delay(150);
     }
 
     private void BrowseExternalPlan()

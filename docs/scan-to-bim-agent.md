@@ -101,6 +101,7 @@ so; do not silently skip.
 | Floor deduplication and minimum level separation | Implemented (1.2 m minimum; largest slab per level) |
 | Wall plane detection and centrelines | Implemented (RANSAC baseline) |
 | Levels, floors, walls in Revit | Implemented with a safety gate |
+| Visible incremental build (levels, slabs, walls, openings, roofs, columns) | Implemented; each stage commits and the 3D view follows |
 | Unit confirmation for PLY/XYZ | Implemented; Auto is blocked |
 | Wall thickness measurement | Not implemented; assumed default type |
 | Openings, doors, windows | Implemented as hosted families; family type dependent |

@@ -123,6 +123,9 @@ blocked without credentials or the subscription backend.
   doors, windows, roofs and columns.
 - Native builder: slabs, thickness-specific walls, hosted doors/windows, flat
   roofs and columns (when a family is loaded).
+- Visible incremental build: levels, slabs, walls, openings, roofs and columns are
+  committed in separate transactions; the UI shows progress and the 3D view follows
+  the new work.
 - Revit 2027 builder probe passed: 1 slab, 4 walls, 2 openings, 1 roof.
 - Knowledge Library is backend-only; no customer-facing UI.
 
