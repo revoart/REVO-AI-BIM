@@ -3,6 +3,51 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.8.5] - 2026-11-02 - Import preview and stale-panel cleanup
+
+### Fixed
+
+- **Import preview confirmed working:** the portrait Workspace now shows the scan
+  file, stored point count, import status, and scan id after a real E57 import.
+- New imports reset the previous analysis and build panels, so old scan results
+  are not shown against the new scan.
+- Provider error remedies now name the correct provider key.
+
+### Verified
+
+- Real E57 import in Revit 2027: **27,802,731 stored points**, 21 chunks,
+  14.6 s.
+- The Workspace window opens without the binding crash.
+- 86 Python tests pass.
+- 37 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the portrait Workspace.
+
+## [0.8.4] - 2026-11-02 - Fix portrait Workspace binding crash
+
+### Fixed
+
+- **Import not previewing:** the portrait Workspace failed to open because the
+  build progress bar used the default TwoWay binding against the read-only
+  `BuildProgressValue` property. The binding is now `Mode=OneWay`.
+- Provider errors now give the correct remedy per provider instead of always
+  mentioning `OPENAI_API_KEY`.
+
+### Verified
+
+- 86 Python tests pass.
+- 37 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the portrait Workspace.
+
+### Notes
+
+- The import itself was already working: the log shows a real 27,802,731-point
+  E57 imported into 21 chunks and analysed into 14 segments. The failure was the
+  Workspace window binding, not the import or engine.
+- A live AI call still requires the matching provider key in the environment of
+  the Revit process.
+
 ## [0.8.3] - 2026-11-02 - OpenAI provider for model generation
 
 ### Added

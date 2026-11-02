@@ -160,6 +160,16 @@ public sealed class ScanAnalysisViewModel : ObservableObject
 
     public bool HasResult => Result is not null;
 
+    public void ResetForNewScan()
+    {
+        Result = null;
+        Elements.Clear();
+        ResultSummary = string.Empty;
+        WarningsText = string.Empty;
+        ErrorMessage = string.Empty;
+        StatusMessage = "Run analysis to detect planar floors, ceilings and walls.";
+    }
+
     private bool CanRun() =>
         !IsBusy && !string.IsNullOrWhiteSpace(StorePath) && Directory.Exists(StorePath);
 

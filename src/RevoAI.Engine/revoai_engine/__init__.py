@@ -5,4 +5,4 @@ segmentation, reconstruction planning and the local knowledge store. All
 processing is local; no scan data leaves the machine.
 """
 
-__version__ = "0.7.2"
+__version__ = "0.7.3"

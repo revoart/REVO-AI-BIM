@@ -132,7 +132,7 @@
                                 Command="{Binding Generate.BuildCommand}"
                                 Style="{StaticResource CompactButton}" Margin="0,6,0,0" />
                         <ProgressBar Height="4" Minimum="0" Maximum="100"
-                                     Value="{Binding Generate.BuildProgressValue}" Margin="0,8,0,0"
+                                     Value="{Binding Generate.BuildProgressValue, Mode=OneWay}" Margin="0,8,0,0"
                                      Visibility="{Binding Generate.IsBusy, Converter={StaticResource BoolToVisibility}}" />
                         <TextBlock Text="{Binding Generate.BuildProgressText}" Style="{StaticResource MutedText}"
                                    FontSize="10" Margin="0,3,0,0" />

@@ -102,6 +102,7 @@ def request_ai_schedule(
         raise provider_failed(
             "No DeepSeek Go API key is configured for the engine.",
             data="Set DEEPSEEK_API_KEY (or REVOAI_AI_API_KEY) and restart Revit.",
+            remedy="Set DEEPSEEK_API_KEY for the user running Revit and restart Revit.",
         )
 
     base = (base_url or _base_url()).rstrip("/")

@@ -282,6 +282,21 @@ public sealed class ReconstructionViewModel : ObservableObject
 
     public bool HasPlan => Plan is not null;
 
+    public void ResetForNewScan()
+    {
+        Plan = null;
+        Floors.Clear();
+        Walls.Clear();
+        PlanSummary = string.Empty;
+        BlockingIssuesText = string.Empty;
+        WarningsText = string.Empty;
+        ErrorMessage = string.Empty;
+        IsBuildable = true;
+        BuildProgressValue = 0;
+        BuildProgressText = string.Empty;
+        StatusMessage = "Create a plan to preview native BIM before building it.";
+    }
+
     private bool CanPreview() =>
         !IsBusy && !string.IsNullOrWhiteSpace(StorePath) && Directory.Exists(StorePath);
 

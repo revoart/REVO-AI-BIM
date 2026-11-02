@@ -806,6 +806,8 @@ public sealed class WorkspaceViewModel : ObservableObject
         ScanStorePath = result.StorePath;
         Analysis.StorePath = result.StorePath;
         Generate.StorePath = result.StorePath;
+        Analysis.ResetForNewScan();
+        Generate.ResetForNewScan();
         ScanWarnings = result.Warnings.Count == 0
             ? "No import warnings."
             : string.Join(Environment.NewLine, result.Warnings.Select(warning => "• " + warning));

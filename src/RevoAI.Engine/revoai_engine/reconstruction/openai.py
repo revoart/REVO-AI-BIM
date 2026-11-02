@@ -54,6 +54,7 @@ def request_openai_schedule(
         raise provider_failed(
             "No OpenAI API key is configured for the engine.",
             data="Set OPENAI_API_KEY and restart Revit.",
+            remedy="Set OPENAI_API_KEY for the user running Revit and restart Revit.",
         )
 
     base = (base_url or os.environ.get(BASE_URL_ENV) or DEFAULT_BASE_URL).rstrip("/")
