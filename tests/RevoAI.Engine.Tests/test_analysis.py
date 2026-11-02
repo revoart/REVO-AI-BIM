@@ -169,6 +169,14 @@ def test_reconstruction_plan_creates_levels_floors_and_walls(tmp_path: Path) -> 
     )
 
     assert plan["method"] == "geometric-floor-wall-plan/1"
+    assert plan["report"]["units"] == "m"
+    assert plan["report"]["capabilities"]["walls"] is True
+    assert plan["report"]["capabilities"]["openings"] is False
+    assert plan["report"]["measured"]
+    assert plan["report"]["assumed"]
+    assert all(wall["source"] in {"MEASURED", "ASSUMED"} for wall in plan["walls"])
+    assert all(floor["source"] == "MEASURED" for floor in plan["floors"])
+    assert plan["report"]["verification"]["cloudToModelDistance"] == "not measured in this build"
     assert len(plan["levels"]) == 1
     assert len(plan["floors"]) == 1
     assert len(plan["walls"]) == 4
@@ -186,6 +194,38 @@ def test_reconstruction_plan_creates_levels_floors_and_walls(tmp_path: Path) -> 
     floor = plan["floors"][0]
     assert len(floor["boundary"]) >= 3
     assert floor["areaM2"] > 10.0
+
+
+def test_plan_blocks_build_when_scan_unit_is_assumed(tmp_path: Path) -> None:
+    imported = _import_room(tmp_path, name="assumed-unit-room")
+    metadata_path = Path(imported["storePath"]) / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    metadata["units"]["sourceOrigin"] = "assumed"
+    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+
+    run_segmentation(
+        SegmentationRunParams(
+            store_path=imported["storePath"],
+            voxel_size_meters=0.0,
+            max_points=10_000,
+            plane_distance_meters=0.01,
+            min_plane_points=100,
+            max_planes=20,
+        )
+    )
+    plan = create_plan(
+        ReconstructionPlanParams(
+            store_path=imported["storePath"],
+            confidence_threshold=0.5,
+            max_elements=20,
+        )
+    )
+
+    assert plan["report"]["buildable"] is False
+    assert any(
+        "unit is assumed" in issue.lower()
+        for issue in plan["report"]["blockingIssues"]
+    )
 
 
 def test_reconstruction_plan_over_protocol(tmp_path: Path) -> None:

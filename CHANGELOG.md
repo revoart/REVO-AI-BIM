@@ -3,6 +3,58 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.7.1] - 2026-11-02 - Accuracy gate, hidden knowledge and measurement reports
+
+### Added
+
+- **Build safety gate.** A plan is marked `buildable: false` when the scan unit
+  is assumed, every wall height is a fallback, no floor was measured, or the
+  floor/level count is incoherent. The UI disables **Create in Revit** and shows
+  the blocking issues.
+- **Explicit units for PLY/XYZ.** Auto unit selection is blocked for formats with
+  no reliable unit metadata. The user must choose feet or metres before import.
+- Floor planes closer than 1.2 m are merged into one level; only the largest
+  floor plane per level is used, avoiding 20 overlapping slabs.
+- Wall height uses the measured ceiling first, then the next level spacing, then
+  the fallback value. The source is recorded as `ceiling`, `level` or `fallback`.
+- Measurement report in every reconstruction plan: units, source units, datum,
+  axes, measured items, assumptions, VERIFY items, capability flags, blocking
+  issues and an explicit "no accuracy claim" note.
+- `source` (`MEASURED`/`ASSUMED`) and `verify` fields on plan levels, floors and
+  walls.
+- Scan-to-BIM agent contract in `docs/scan-to-bim-agent.md`.
+- Astra prompt now follows the surveyor-first measure → schedule → build → verify
+  rules and labels assumptions.
+- Point-cloud show/hide control in the workspace top bar, in addition to the
+  sidebar control.
+
+### Changed
+
+- **Knowledge tools are hidden from customers.** The Knowledge stage and ribbon
+  panel are only created when `REVOAI_INTERNAL_TOOLS=1` is set for internal Revo
+  staff. The backend storage, RPC and retrieval remain available.
+- Point-cloud status text is user-facing and no longer exposes marker counts.
+- Hiding the point cloud now works even when no scan path is loaded, as long as
+  the reference element exists.
+
+### Known issue
+
+- The sampled point-cloud reference still fails in real Revit testing at
+  `TessellatedShapeBuilder.Build()` with `InternalException`. A line-based
+  fallback is implemented but not yet verified. Do not claim the point-cloud
+  overlay works until a real import succeeds.
+- The geometric floor/wall baseline is not dimensionally accurate. The build
+  gate now blocks assumed units, missing floors and incoherent floor counts, but
+  openings, wall thickness, levelling, yaw correction and scan-to-model
+  verification are still not implemented.
+
+### Verified
+
+- 75 Python tests pass.
+- 37 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the Workspace and transcript window.
+
 ## [0.7.0] - 2026-11-01 - Local BIM knowledge engine
 
 ### Added

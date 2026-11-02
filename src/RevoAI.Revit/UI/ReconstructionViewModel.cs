@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
+using System.Text.Json;
 using System.Windows.Input;
 using RevoAI.Contracts.Protocol;
 using RevoAI.Revit.Configuration;
@@ -28,6 +29,8 @@ public sealed class ReconstructionViewModel : ObservableObject
     private string _errorMessage = string.Empty;
     private string _warningsText = string.Empty;
     private string _planSummary = string.Empty;
+    private string _blockingIssuesText = string.Empty;
+    private bool _isBuildable = true;
     private bool _isBusy;
     private ReconstructionPlanResult? _plan;
 
@@ -169,6 +172,28 @@ public sealed class ReconstructionViewModel : ObservableObject
         private set => SetProperty(ref _planSummary, value);
     }
 
+    public string BlockingIssuesText
+    {
+        get => _blockingIssuesText;
+        private set => SetProperty(ref _blockingIssuesText, value);
+    }
+
+    public bool IsBuildable
+    {
+        get => _isBuildable;
+        private set
+        {
+            if (SetProperty(ref _isBuildable, value))
+            {
+                OnPropertyChanged(nameof(HasBlockingIssues));
+                OnPropertyChanged(nameof(BuildButtonText));
+                (BuildCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool HasBlockingIssues => !IsBuildable && !string.IsNullOrWhiteSpace(BlockingIssuesText);
+
     public bool IsBusy
     {
         get => _isBusy;
@@ -190,7 +215,7 @@ public sealed class ReconstructionViewModel : ObservableObject
 
     public string PreviewButtonText => IsBusy ? "Working…" : "Create preview";
 
-    public string BuildButtonText => IsBusy ? "Working…" : "Create in Revit";
+    public string BuildButtonText => IsBusy ? "Working…" : IsBuildable ? "Create in Revit" : "Measurements incomplete";
 
     public ReconstructionPlanResult? Plan
     {
@@ -211,7 +236,7 @@ public sealed class ReconstructionViewModel : ObservableObject
     private bool CanPreview() =>
         !IsBusy && !string.IsNullOrWhiteSpace(StorePath) && Directory.Exists(StorePath);
 
-    private bool CanBuild() => !IsBusy && Plan is not null && _runner is not null;
+    private bool CanBuild() => !IsBusy && Plan is not null && _runner is not null && IsBuildable;
 
     private async Task PreviewAsync()
     {
@@ -266,6 +291,8 @@ public sealed class ReconstructionViewModel : ObservableObject
         Plan = null;
         Floors.Clear();
         Walls.Clear();
+        IsBuildable = true;
+        BlockingIssuesText = string.Empty;
         StatusMessage = "Starting the Python engine…";
 
         try
@@ -286,6 +313,7 @@ public sealed class ReconstructionViewModel : ObservableObject
             });
 
             Plan = plan;
+            ApplyPlanQuality(plan);
             foreach (var floor in plan.Floors)
             {
                 Floors.Add(floor);
@@ -301,11 +329,13 @@ public sealed class ReconstructionViewModel : ObservableObject
                 ? "No plan warnings."
                 : string.Join(Environment.NewLine, plan.Warnings.Select(warning => "• " + warning));
             StatusMessage =
-                $"Preview ready: {plan.Levels.Count} level(s), {plan.Floors.Count} floor(s) " +
-                $"and {plan.Walls.Count} wall(s). Nothing has been created in Revit yet.";
+                IsBuildable
+                    ? $"Preview ready: {plan.Levels.Count} level(s), {plan.Floors.Count} floor(s) " +
+                      $"and {plan.Walls.Count} wall(s). Nothing has been created in Revit yet."
+                    : $"Preview ready but blocked: {BlockingIssuesText.Replace(Environment.NewLine, " ")}";
             RevoLog.Info(
                 $"Reconstruction plan {plan.ScanId}: {plan.Levels.Count} levels, " +
-                $"{plan.Floors.Count} floors, {plan.Walls.Count} walls.");
+                $"{plan.Floors.Count} floors, {plan.Walls.Count} walls, buildable={IsBuildable}.");
         }
         catch (RevoAIEngineException ex)
         {
@@ -331,6 +361,14 @@ public sealed class ReconstructionViewModel : ObservableObject
     {
         if (IsBusy || Plan is null)
         {
+            return;
+        }
+
+        if (!IsBuildable)
+        {
+            ErrorMessage =
+                "Resolve the blocking measurement issues before creating geometry. " +
+                "Nothing has been created in Revit.";
             return;
         }
 
@@ -420,6 +458,47 @@ public sealed class ReconstructionViewModel : ObservableObject
         }
     }
 
+    private void ApplyPlanQuality(ReconstructionPlanResult plan)
+    {
+        var buildable = true;
+        var reasons = new List<string>();
+
+        if (plan.Report is JsonElement report && report.ValueKind == JsonValueKind.Object)
+        {
+            if (report.TryGetProperty("buildable", out var flag) &&
+                flag.ValueKind == JsonValueKind.False)
+            {
+                buildable = false;
+            }
+
+            if (report.TryGetProperty("blockingIssues", out var issues) &&
+                issues.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var issue in issues.EnumerateArray())
+                {
+                    if (issue.ValueKind == JsonValueKind.String)
+                    {
+                        var text = issue.GetString();
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            reasons.Add(text);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (reasons.Count > 0)
+        {
+            buildable = false;
+        }
+
+        IsBuildable = buildable;
+        BlockingIssuesText = string.Join(
+            Environment.NewLine,
+            reasons.Select(reason => "• " + reason));
+    }
+
     private static string BuildSummary(ReconstructionPlanResult plan)
     {
         var levels = string.Join(
@@ -433,7 +512,33 @@ public sealed class ReconstructionViewModel : ObservableObject
             $"Floors: {plan.Floors.Count:N0} · Walls: {plan.Walls.Count:N0}" +
             (fallback == 0 ? string.Empty : $" · fallback wall heights: {fallback}") +
             Environment.NewLine +
+            BuildReportSummary(plan) +
             $"Plan file: {plan.ResultPath}";
+    }
+
+    private static string BuildReportSummary(ReconstructionPlanResult plan)
+    {
+        if (plan.Report is not JsonElement report ||
+            report.ValueKind != JsonValueKind.Object)
+        {
+            return string.Empty;
+        }
+
+        static string Text(JsonElement element, string name) =>
+            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString() ?? string.Empty
+                : string.Empty;
+
+        static int Count(JsonElement element, string name) =>
+            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
+                ? value.GetArrayLength()
+                : 0;
+
+        return
+            $"Units: {Text(report, "units")} · Datum: {Text(report, "datum")} · Axes: {Text(report, "axes")}" +
+            Environment.NewLine +
+            $"Measured: {Count(report, "measured")} · Assumed: {Count(report, "assumed")} · " +
+            $"Verify: {Count(report, "verify")}{Environment.NewLine}";
     }
 
     private static string MapProvider(string label) => label switch

@@ -5,19 +5,20 @@ This file is deliberately blunt. Anything listed here is **not working** or
 
 ## Product scope (current)
 
-1. **Reconstruction is limited to levels, floors, walls and a visual reference.**
-   E57, LAS, LAZ, PLY and XYZ/TXT scans can be imported, Scan Analysis runs the
-   geometric segmentation baseline, and Generate BIM creates native levels,
-   floors and walls marked `REVO-INFERRED`. Model Review and Quality Check still
-   show honest "not implemented" dialogs.
+1. **The geometric reconstruction is not dimensionally accurate.** It creates
+   levels, floor polygons and wall centrelines from RANSAC planes, but it does not
+   level or yaw-correct the scan, measure wall thickness, detect openings, or
+   verify cloud-to-model distance. The current output has produced implausible
+   20-floor/15-wall plans. Native generation is now blocked when the unit is
+   assumed, every wall height is fallback, no floor is measured, or the floor
+   count is incoherent. Do not present the baseline as an accurate BIM model.
 2. **No RCP/RCS support.** Those formats require a verified Autodesk workflow
    and are not accepted by the importer.
-3. **No native point-cloud element in Revit.** RCP/RCS is required for a real
-   `PointCloudInstance`. To keep the scan visible, Revit gets a DirectShape named
-   *Revo Point Cloud Reference* built from at most 4,000 sampled tetrahedral
-   markers. It is a visual aid, not native scan data, not measurable and not a
-   replacement for a point-cloud element. Use the sidebar button to show or hide
-   it.
+3. **The sampled point-cloud reference is currently broken in Revit 2027.**
+   `TessellatedShapeBuilder.Build()` throws `InternalException` during real
+   testing. The reference is intended to be a visual aid only, never native scan
+   data or a measured surface. Do not claim the overlay works until the probe and
+   a real import succeed.
 4. **No trained ML.** Scan Analysis is a deterministic geometric RANSAC
    baseline. There is no neural network, training dataset or learned model.
 5. **Limited BIM reconstruction.** Phase 5 can create native floors and walls
@@ -135,6 +136,34 @@ This file is deliberately blunt. Anything listed here is **not working** or
 32. **The knowledge UI and project extractor need manual in-Revit checks.**
     Automated tests cover storage, RPC and contract behavior, not the WPF/Revit
     interaction.
+
+## Accuracy gate (0.7.1)
+
+A plan is not buildable when any of these is true:
+
+- The scan unit is `assumed`, not confirmed.
+- No wall height was measured and every wall uses a fallback value.
+- No floor plane met the threshold.
+- The number of floor polygons is incoherent relative to the detected levels.
+
+The UI disables **Create in Revit** and lists the blocking issues. The plan JSON
+contains `report.buildable` and `report.blockingIssues`. This gate does not make
+the remaining geometry accurate; it only prevents the worst outputs from being
+written into a model.
+
+## Accuracy limits (current)
+
+- No tilt or yaw correction.
+- No wall thickness measurement; default Revit types are used.
+- Floor planes closer than 1.2 m are merged; only the largest plane per level is
+  used. This avoids overlapping slabs but is not a room-by-room floor model.
+- Wall height uses ceiling evidence first, then level spacing, then a fallback.
+  All three are labelled; only the ceiling case is measured.
+- No openings, doors, windows, ceilings, roofs, columns or stairs.
+- No cloud-to-model distance verification.
+- PLY/XYZ imports now require an explicit unit; E57 is metres by specification.
+- The current floor/wall baseline is a measurement scaffold, not an accurate
+  reconstruction.
 
 ## Honesty rules for future phases
 

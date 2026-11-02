@@ -41,6 +41,7 @@ def create_plan(params) -> dict[str, Any]:
         return _create_external_plan(params, started)
 
     segmentation = load_segmentation(params.store_path)
+    store = PointCloudStore.open(params.store_path)
     warnings: list[str] = []
     elements = segmentation.get("elements", [])
     store_path = Path(segmentation["storePath"]).resolve()
@@ -84,8 +85,23 @@ def create_plan(params) -> dict[str, Any]:
     level_by_id = {level["id"]: level for level in levels}
 
     floors: list[dict[str, Any]] = []
-    for index, element in enumerate(floor_elements, start=1):
+    floors_by_level: dict[str, dict[str, Any]] = {}
+    for element in floor_elements:
         level = _nearest_level(levels, float(element["centroid"][2]))
+        existing = floors_by_level.get(level["id"])
+        if existing is None or float(element.get("areaM2", 0.0)) > float(
+            existing.get("areaM2", 0.0)
+        ):
+            floors_by_level[level["id"]] = element
+
+    if len(floors_by_level) < len(floor_elements):
+        warnings.append(
+            f"Merged {len(floor_elements)} floor planes into {len(floors_by_level)} "
+            "level slab(s); the largest plane per level was used."
+        )
+
+    for index, (level_id, element) in enumerate(floors_by_level.items(), start=1):
+        level = level_by_id[level_id]
         boundary = _closed_boundary(element["boundary"])
         if len(boundary) < 3:
             continue
@@ -97,6 +113,7 @@ def create_plan(params) -> dict[str, Any]:
                 "boundary": boundary,
                 "areaM2": round(float(element.get("areaM2", 0.0)), 3),
                 "confidence": round(float(element.get("confidence", 0.0)), 3),
+                "source": "MEASURED",
             }
         )
 
@@ -109,6 +126,7 @@ def create_plan(params) -> dict[str, Any]:
     walls: list[dict[str, Any]] = []
     fallback_height = float(params.fallback_wall_height_meters)
     fallback_walls = 0
+    level_height_walls = 0
     for index, element in enumerate(wall_elements, start=1):
         level = _base_level_for_wall(levels, float(element["centroid"][2]))
         if level is None:
@@ -131,9 +149,22 @@ def create_plan(params) -> dict[str, Any]:
             height = min(higher_ceilings) - base
             height_source = "ceiling"
         else:
-            height = fallback_height
-            height_source = "fallback"
-            fallback_walls += 1
+            next_level = next(
+                (
+                    level
+                    for level in levels
+                    if float(level["elevationMeters"]) > base + 0.5
+                ),
+                None,
+            )
+            if next_level is not None:
+                height = float(next_level["elevationMeters"]) - base
+                height_source = "level"
+                level_height_walls += 1
+            else:
+                height = fallback_height
+                height_source = "fallback"
+                fallback_walls += 1
 
         if not 0.5 <= height <= 10.0:
             height = fallback_height
@@ -150,6 +181,8 @@ def create_plan(params) -> dict[str, Any]:
                 "heightMeters": round(height, 3),
                 "heightSource": height_source,
                 "confidence": round(float(element.get("confidence", 0.0)), 3),
+                "source": "MEASURED" if height_source == "ceiling" else "ASSUMED",
+                "verify": height_source != "ceiling",
             }
         )
 
@@ -165,10 +198,54 @@ def create_plan(params) -> dict[str, Any]:
 
     if fallback_walls:
         warnings.append(
-            f"{fallback_walls} wall(s) used the fallback height because no usable ceiling was found."
+            f"{fallback_walls} wall(s) used the fallback height because no usable ceiling or upper level was found."
+        )
+    if level_height_walls:
+        warnings.append(
+            f"{level_height_walls} wall(s) used the level spacing as an assumed height."
         )
     if not walls:
         warnings.append("No wall segment met the threshold and produced a valid line.")
+
+    assumed = [
+        "Wall thickness uses the default Revit wall type; it was not measured from the scan.",
+        "Floor thickness uses the default Revit floor type; it was not measured from the scan.",
+    ]
+    verify = []
+    if fallback_walls:
+        assumed.append(
+            f"{fallback_walls} wall height(s) use the fallback value because no usable ceiling or upper level was measured."
+        )
+    if level_height_walls:
+        assumed.append(
+            f"{level_height_walls} wall height(s) use the level spacing; the height was not measured directly."
+        )
+    verify.extend(wall["id"] for wall in walls if wall.get("verify"))
+    if skipped_confidence:
+        verify.append(
+            f"{skipped_confidence} segment(s) below the confidence threshold were not modeled."
+        )
+    if skipped_boundary:
+        verify.append(
+            f"{skipped_boundary} segment(s) without a usable boundary were not modeled."
+        )
+    report = _build_report(
+        store,
+        source="geometric-baseline",
+        measured=[
+            f"{len(floor_elements)} floor plane(s)",
+            f"{len(wall_elements)} wall plane(s)",
+            f"{len(levels)} level(s)",
+        ],
+        assumed=assumed,
+        verify=verify,
+        blocking=_blocking_issues(
+            store,
+            floors=floors,
+            walls=walls,
+            levels=levels,
+        ),
+    )
 
     result_path = store_path / _ANALYSIS_DIR / _PLAN_FILE
     result = {
@@ -185,6 +262,7 @@ def create_plan(params) -> dict[str, Any]:
         "floors": floors,
         "walls": walls,
         "warnings": warnings,
+        "report": report,
         "resultPath": str(result_path),
         "createdAt": _utc_now(),
         "engineVersion": __version__,
@@ -454,6 +532,7 @@ def _normalize_external_plan(
                 "id": level_id,
                 "name": name,
                 "elevationMeters": round(elevation, 6),
+                "source": str(raw.get("source") or "ASSUMED"),
             }
         )
 
@@ -483,11 +562,13 @@ def _normalize_external_plan(
                 "boundary": boundary,
                 "areaM2": round(area, 3),
                 "confidence": confidence,
+                "source": str(raw.get("source") or "ASSUMED"),
             }
         )
 
     walls: list[dict[str, Any]] = []
     fallback_height = float(params.fallback_wall_height_meters)
+    fallback_walls = 0
     for index, raw in enumerate(walls_raw, start=1):
         if not isinstance(raw, dict):
             raise plan_invalid(f"Wall {index} must be a JSON object.")
@@ -503,6 +584,7 @@ def _normalize_external_plan(
         if height_raw is None:
             height = fallback_height
             height_source = "fallback"
+            fallback_walls += 1
             warnings.append(f"Wall {index} has no height; fallback height was used.")
         else:
             height = _finite_float(height_raw, f"wall {index} height")
@@ -522,6 +604,8 @@ def _normalize_external_plan(
                 "heightMeters": round(height, 3),
                 "heightSource": height_source,
                 "confidence": confidence,
+                "source": str(raw.get("source") or "ASSUMED"),
+                "verify": bool(raw.get("verify", height_source == "fallback")),
             }
         )
 
@@ -542,6 +626,30 @@ def _normalize_external_plan(
         "fallbackWallHeightMeters": fallback_height,
         "maxElements": max_elements,
     }
+    assumed = [str(item) for item in (payload.get("assumptions") or [])]
+    if fallback_walls:
+        assumed.append(
+            f"{fallback_walls} wall height(s) use the fallback value because no usable ceiling was measured."
+        )
+    verify = [str(item) for item in (payload.get("verify") or [])]
+    verify.extend(wall["id"] for wall in walls if wall.get("verify"))
+    report = _build_report(
+        store,
+        source=source_label,
+        measured=[
+            f"{len(levels)} level(s)",
+            f"{len(floors)} floor(s)",
+            f"{len(walls)} wall(s)",
+        ],
+        assumed=assumed,
+        verify=verify,
+        blocking=_blocking_issues(
+            store,
+            floors=floors,
+            walls=walls,
+            levels=levels,
+        ),
+    )
     result = {
         "scanId": store.metadata.get("scanId", store.path.name),
         "storePath": str(store.path),
@@ -551,6 +659,7 @@ def _normalize_external_plan(
         "floors": floors,
         "walls": walls,
         "warnings": warnings,
+        "report": report,
         "resultPath": str(result_path),
         "createdAt": _utc_now(),
         "engineVersion": __version__,
@@ -607,13 +716,84 @@ def _polygon_area(boundary: list[list[float]]) -> float:
     return abs(float(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1))) / 2.0)
 
 
+def _blocking_issues(
+    store: PointCloudStore,
+    *,
+    floors: list[dict[str, Any]],
+    walls: list[dict[str, Any]],
+    levels: list[dict[str, Any]],
+) -> list[str]:
+    issues: list[str] = []
+    units = store.metadata.get("units", {}) or {}
+    unit_source = str(units.get("sourceOrigin", "unknown")).lower()
+    if unit_source in {"assumed", "unknown"}:
+        issues.append(
+            "The scan unit is assumed, not confirmed. Set the source unit and re-import before building."
+        )
+    if not floors:
+        issues.append("No floor plane met the threshold; there is nothing reliable to build.")
+    if len(floors) > max(6, len(levels) * 2):
+        issues.append(
+            f"{len(floors)} floor polygons across {len(levels)} levels are incoherent. "
+            "Review the segmentation before building."
+        )
+    return issues
+
+
+def _build_report(
+    store: PointCloudStore,
+    *,
+    source: str,
+    measured: list[str],
+    assumed: list[str],
+    verify: list[str],
+    blocking: list[str] | None = None,
+) -> dict[str, Any]:
+    blocking_issues = blocking or []
+    return {
+        "units": "m",
+        "sourceUnits": store.metadata.get("units", {}),
+        "datum": "scan coordinates unchanged; no recentring or rotation",
+        "axes": "scan X/Y/Z",
+        "corrections": {
+            "tilt": "not applied",
+            "yaw": "not applied",
+        },
+        "source": source,
+        "measured": measured,
+        "assumed": assumed,
+        "verify": verify,
+        "buildable": not blocking_issues,
+        "blockingIssues": blocking_issues,
+        "capabilities": {
+            "levels": True,
+            "floors": True,
+            "walls": True,
+            "openings": False,
+            "doors": False,
+            "windows": False,
+            "ceilings": False,
+            "roofs": False,
+            "columns": False,
+            "stairs": False,
+        },
+        "verification": {
+            "cloudToModelDistance": "not measured in this build",
+            "note": "No dimensional accuracy claim is made.",
+        },
+    }
+
+
 def _build_levels(
     floors: list[dict[str, Any]], tolerance: float, warnings: list[str]
 ) -> list[dict[str, Any]]:
+    # A storey is never 25 cm tall. Near-coplanar floor detections closer than
+    # 1.2 m are duplicates/noise, not separate levels.
+    effective_tolerance = max(float(tolerance), 1.2)
     elevations = sorted(float(element["centroid"][2]) for element in floors)
     clusters: list[list[float]] = []
     for elevation in elevations:
-        if not clusters or abs(elevation - float(np.mean(clusters[-1]))) > tolerance:
+        if not clusters or abs(elevation - float(np.mean(clusters[-1]))) > effective_tolerance:
             clusters.append([elevation])
         else:
             clusters[-1].append(elevation)
@@ -628,12 +808,18 @@ def _build_levels(
                 "id": f"level-{index}",
                 "name": f"Revo Level {index}",
                 "elevationMeters": round(float(np.mean(cluster)), 3),
+                "source": "MEASURED",
             }
         )
     if len(levels) > 1:
         warnings.append(
             f"Floors were grouped into {len(levels)} levels using a "
-            f"{tolerance:g} m tolerance."
+            f"{effective_tolerance:g} m minimum separation."
+        )
+    elif len(floors) > 1:
+        warnings.append(
+            f"{len(floors)} floor detections were merged into one level because they were "
+            f"closer than {effective_tolerance:g} m."
         )
     return levels
 

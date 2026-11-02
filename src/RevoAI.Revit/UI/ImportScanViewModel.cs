@@ -313,6 +313,17 @@ public sealed class ImportScanViewModel : ObservableObject
             return;
         }
 
+        var extension = Path.GetExtension(sourcePath).ToLowerInvariant();
+        if (SelectedUnit == "Auto (read from file)" &&
+            extension is ".ply" or ".xyz" or ".txt" or ".asc" or ".pts")
+        {
+            ErrorMessage =
+                "PLY/XYZ files have no reliable unit metadata. Choose the source unit explicitly " +
+                "(feet or metres) before importing. Wrong units make every dimension and area wrong.";
+            StatusMessage = "Import blocked: confirm the scan unit.";
+            return;
+        }
+
         IsBusy = true;
         ErrorMessage = string.Empty;
         WarningsText = string.Empty;

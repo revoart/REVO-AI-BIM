@@ -31,6 +31,8 @@ public sealed class PlanLevel
     public required string Name { get; init; }
 
     public required double ElevationMeters { get; init; }
+
+    public string Source { get; init; } = "MEASURED";
 }
 
 public sealed class PlanFloor
@@ -46,6 +48,8 @@ public sealed class PlanFloor
     public required double AreaM2 { get; init; }
 
     public required double Confidence { get; init; }
+
+    public string Source { get; init; } = "MEASURED";
 }
 
 public sealed class PlanWall
@@ -66,6 +70,10 @@ public sealed class PlanWall
     public required string HeightSource { get; init; }
 
     public required double Confidence { get; init; }
+
+    public string Source { get; init; } = "MEASURED";
+
+    public bool Verify { get; init; }
 }
 
 /// <summary>Revit-ready floor and wall descriptors. No Revit objects have been created.</summary>
@@ -86,6 +94,9 @@ public sealed class ReconstructionPlanResult
     public required IReadOnlyList<PlanWall> Walls { get; init; }
 
     public required IReadOnlyList<string> Warnings { get; init; }
+
+    /// <summary>Measurement report: units, datum, axes, assumptions and VERIFY items.</summary>
+    public JsonElement? Report { get; init; }
 
     public required string ResultPath { get; init; }
 

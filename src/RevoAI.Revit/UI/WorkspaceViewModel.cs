@@ -58,7 +58,7 @@ public sealed class WorkspaceViewModel : ObservableObject
     private bool _isBusy;
     private WorkspaceStage _stage = WorkspaceStage.Project;
     private bool _referenceCloudVisible;
-    private string _referenceCloudStatus = "No point-cloud reference in the model.";
+    private string _referenceCloudStatus = "No point cloud in the model.";
     private double _progressValue;
     private int _detectedElements;
     private string _confidenceText = "—";
@@ -106,7 +106,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         TestEngineCommand = new AsyncRelayCommand(TestEngineAsync);
         ToggleReferenceCloudCommand = new AsyncRelayCommand(
             ToggleReferenceCloudAsync,
-            () => HasScanStore() && !IsBusy);
+            () => CanToggleReferenceCloud && !IsBusy);
         AddLevelCommand = new RelayCommand(AddLevel);
         RemoveLevelCommand = new RelayCommand(RemoveLevel, () => SelectedLevel is { IsExisting: false });
         CreateLevelsCommand = new AsyncRelayCommand(CreateLevelsAsync, () => !IsBusy && Levels.Any(level => !level.IsExisting));
@@ -290,12 +290,17 @@ public sealed class WorkspaceViewModel : ObservableObject
             if (SetProperty(ref _scanStorePath, value))
             {
                 OnPropertyChanged(nameof(HasScan));
+                OnPropertyChanged(nameof(CanToggleReferenceCloud));
                 (ToggleReferenceCloudCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
         }
     }
 
     public bool HasScan => HasScanStore();
+
+    public bool CanToggleReferenceCloud => HasScanStore() || ReferenceCloudVisible;
+
+    public bool InternalKnowledgeToolsEnabled => BuildInfo.InternalToolsEnabled;
 
     public bool ReferenceCloudVisible
     {
@@ -305,12 +310,14 @@ public sealed class WorkspaceViewModel : ObservableObject
             if (SetProperty(ref _referenceCloudVisible, value))
             {
                 OnPropertyChanged(nameof(ReferenceCloudButtonText));
+                OnPropertyChanged(nameof(CanToggleReferenceCloud));
+                (ToggleReferenceCloudCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             }
         }
     }
 
     public string ReferenceCloudButtonText =>
-        ReferenceCloudVisible ? "Hide point cloud reference" : "Show point cloud reference";
+        ReferenceCloudVisible ? "Hide point cloud" : "Show point cloud";
 
     public string ReferenceCloudStatus
     {
@@ -499,6 +506,11 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public void ShowKnowledgeStage()
     {
+        if (!InternalKnowledgeToolsEnabled)
+        {
+            return;
+        }
+
         SetStage(WorkspaceStage.Knowledge);
         _ = Knowledge.LoadAsync();
     }
@@ -554,8 +566,8 @@ public sealed class WorkspaceViewModel : ObservableObject
             ApplySnapshot(snapshot);
             ReferenceCloudVisible = await _runner.InvokeAsync(PointCloudReferenceBuilder.Exists);
             ReferenceCloudStatus = ReferenceCloudVisible
-                ? "Point-cloud reference is present in the model."
-                : "No point-cloud reference in the model.";
+                ? "Point cloud is visible in 3D views."
+                : "No point cloud in the model.";
             StatusMessage = $"Loaded '{snapshot.Title}'.";
         }
         catch (Exception ex)
@@ -683,23 +695,13 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     private async Task ToggleReferenceCloudAsync()
     {
-        if (!HasScanStore())
+        if (!HasScanStore() && !ReferenceCloudVisible)
         {
-            StatusMessage = "Import a scan before showing its reference cloud.";
+            StatusMessage = "Import a scan before showing the point cloud.";
             return;
         }
 
         await SetReferenceCloudVisibleAsync(!ReferenceCloudVisible);
-    }
-
-    private async Task ShowReferenceCloudAsync(bool force = false)
-    {
-        if (!HasScanStore() || IsBusy || (ReferenceCloudVisible && !force))
-        {
-            return;
-        }
-
-        await SetReferenceCloudVisibleAsync(show: true);
     }
 
     private async Task SetReferenceCloudVisibleAsync(bool show)
@@ -711,8 +713,8 @@ public sealed class WorkspaceViewModel : ObservableObject
             {
                 await _runner.InvokeAsync(PointCloudReferenceBuilder.Hide);
                 ReferenceCloudVisible = false;
-                ReferenceCloudStatus = "Hidden: the model reference was removed.";
-                StatusMessage = "Point-cloud reference hidden.";
+                ReferenceCloudStatus = "Point cloud is hidden.";
+                StatusMessage = "Point cloud hidden.";
                 RevoLog.Info(ReferenceCloudStatus);
                 return;
             }
@@ -735,10 +737,9 @@ public sealed class WorkspaceViewModel : ObservableObject
                 app => PointCloudReferenceBuilder.Show(app, positions));
 
             ReferenceCloudVisible = visible;
-            ReferenceCloudStatus =
-                $"Shown: {sample.Returned:N0} sampled marker(s) in the model.";
+            ReferenceCloudStatus = "Point cloud is visible in 3D views.";
             StatusMessage =
-                "Point-cloud reference shown. This is sampled reference geometry, not native point-cloud data.";
+                "Point cloud shown. Open a 3D view to see it with the model.";
             RevoLog.Info(ReferenceCloudStatus);
         }
         catch (Exception ex)
@@ -830,7 +831,6 @@ public sealed class WorkspaceViewModel : ObservableObject
         ScanStorePath = result.StorePath;
         Analysis.StorePath = result.StorePath;
         Generate.StorePath = result.StorePath;
-        _ = ShowReferenceCloudAsync(force: true);
         ScanWarnings = result.Warnings.Count == 0
             ? "No import warnings."
             : string.Join(Environment.NewLine, result.Warnings.Select(warning => "• " + warning));

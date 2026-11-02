@@ -18,8 +18,29 @@ from .errors import provider_failed
 DEFAULT_MODEL = "gpt-6-astra"
 DEFAULT_BASE_URL = "https://api.openai.com/v1"
 
-_SYSTEM_PROMPT = """You are an architectural BIM reconstruction model working from
-a laser scan of a building. Return only the requested JSON plan.
+_SYSTEM_PROMPT = """You are a scan-to-BIM modelling agent and surveyor. You convert
+point-cloud evidence into an accurate, editable BIM schedule and then into
+native elements. Never model from memory or from what a "typical" building looks
+like.
+
+Core principle:
+MEASURE -> WRITE A SCHEDULE -> BUILD FROM THE SCHEDULE -> VERIFY AGAINST THE SCAN.
+
+Hard rules:
+- Every element must trace to a measurement or be labelled ASSUMED.
+- Weak evidence is still modelled where reasonable, but tagged VERIFY and listed.
+- Do not invent interiors from a partial or exterior-only scan.
+- Never change units, axes or datum silently. State them once and keep them.
+- Wall thickness, floor build-up, roof thickness and footings are assumptions
+  unless the scan proves them.
+- Openings must be real voids through hosts; windows and doors are hosted in
+  those openings, never surface decals.
+- One coordinate system for scan, schedule, model and drawings.
+- If the contract cannot represent an element, say so; do not silently skip it.
+
+For this phase the executable contract supports levels, floor polygons and wall
+centrelines only. Openings, doors, windows, ceilings, roofs, columns and stairs
+are not executable yet; list them under `verify` instead of inventing them.
 
 Rules:
 - Use metres and the scan's existing coordinate system. Never re-centre.
@@ -34,6 +55,8 @@ Rules:
 - Approved local knowledge may be supplied in `approvedKnowledge`. You may use
   it to guide procedure, but the scan evidence always wins. Do not invent facts
   that are not present in the evidence or the approved knowledge.
+- Mark every level, floor and wall with `source`: MEASURED or ASSUMED. Add a
+  `verify` list for anything the scan cannot prove.
 """
 
 _SCHEMA: dict[str, Any] = {
@@ -53,6 +76,7 @@ _SCHEMA: dict[str, Any] = {
                     "id": {"type": "string"},
                     "name": {"type": "string"},
                     "elevationMeters": {"type": "number"},
+                    "source": {"type": "string", "enum": ["MEASURED", "ASSUMED"]}
                 },
             },
         },
@@ -76,6 +100,7 @@ _SCHEMA: dict[str, Any] = {
                         },
                     },
                     "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                    "source": {"type": "string", "enum": ["MEASURED", "ASSUMED"]}
                 },
             },
         },
@@ -102,8 +127,21 @@ _SCHEMA: dict[str, Any] = {
                     },
                     "heightMeters": {"type": "number", "minimum": 0.5, "maximum": 10},
                     "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                    "source": {"type": "string", "enum": ["MEASURED", "ASSUMED"]},
+                    "verify": {"type": "boolean"}
                 },
             },
+        },
+        "units": {"type": "string"},
+        "datum": {"type": "string"},
+        "axes": {"type": "string"},
+        "assumptions": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+        "verify": {
+            "type": "array",
+            "items": {"type": "string"},
         },
     },
 }

@@ -9,17 +9,21 @@ tested and reviewed before the next begins.
 > **Current status: Phase 5 plus the local knowledge engine. E57, LAS, LAZ, PLY
 > and XYZ/TXT scans can be imported, analysed into floor/ceiling/wall instances,
 > and converted into a previewable plan for native Revit floors and walls.
-> Import, analysis, generation, subscription and knowledge are stages in one
-> Workspace window. A real 27.8-million-point E57 import is verified in Revit
-> 2027; native geometry creation and the Scan Analysis UI still need manual
-> in-Revit verification.**
+> Import, analysis, generation and subscription are the customer-facing stages.
+> Knowledge storage, review and extraction are backend/internal tools hidden
+> behind `REVOAI_INTERNAL_TOOLS=1`. A real 27.8-million-point E57 import is
+> verified in Revit 2027; native geometry creation and the Scan Analysis UI still
+> need manual in-Revit verification.**
 >
 > This is not a trained neural network. Revit shows a sampled **point-cloud
 > reference** made of model markers, not a native RCP/RCS scan; it is a visual
 > aid, not measured point data. Generated floors and walls are inferred from a
-> deterministic geometric baseline, not measured accuracy. The knowledge library
-> is local SQLite/FTS5 with human review; approved knowledge can guide Astra,
-> but scan evidence remains authoritative.
+> deterministic geometric baseline, not measured accuracy. **The current
+> geometric baseline is not dimensionally accurate.** Native generation is now
+> blocked when the unit is assumed, wall heights are all fallback values, or the
+> floor/level result is incoherent. The knowledge library is local SQLite/FTS5
+> with human review; approved knowledge can guide Astra, but scan evidence
+> remains authoritative.
 
 ## What exists today
 
@@ -42,9 +46,10 @@ tested and reviewed before the next begins.
 | Real Scan Analysis stage and workspace metrics | Done, XAML probe passed; in-Revit check pending |
 | Reconstruction plan with levels, floor polygons and wall lines | Done, tested |
 | Native Revit floor and wall creation with inferred-element marking | Implemented; manual in-Revit check pending |
-| Model-visible sampled point-cloud reference with sidebar show/hide control | Implemented; manual in-Revit check pending |
-| Local knowledge library (SQLite + FTS5, provenance, review, backup/export) | Done, tested |
-| Read-only Revit project extraction into the knowledge library | Implemented; manual in-Revit check pending |
+| Model-visible point-cloud reference with top-bar and sidebar show/hide controls | Known issue: Revit 2027 tessellation build fails; diagnostic in progress |
+| Native build safety gate (units, heights, floor coherence) | Implemented; blocks unreliable plans |
+| Local knowledge library (SQLite + FTS5, provenance, review, backup/export) | Backend/internal; hidden from customer UI |
+| Read-only Revit project extraction into the knowledge library | Backend/internal; manual in-Revit extraction verified on a two-level project |
 | Approved-knowledge retrieval for Astra planning | Implemented; tested with fakes; live Astra blocked without credentials |
 | Unit conversion kernel (metres ↔ feet ↔ mm/in/US survey feet) | Done, tested |
 | Structured logging, configuration, error model | Done |

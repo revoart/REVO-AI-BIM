@@ -4,9 +4,10 @@ using Autodesk.Revit.UI;
 namespace RevoAI.Revit.RevitApi;
 
 /// <summary>
-/// Creates a sampled, model-wide point-cloud reference as a DirectShape. Revit's
-/// native PointCloudInstance requires RCP/RCS, so this uses small tessellated
-/// markers from the local scan store instead of pretending to be a native scan.
+/// Creates a sampled, model-wide point-cloud reference. Revit's native
+/// PointCloudInstance requires RCP/RCS, so this uses either a triangle mesh or
+/// short model lines from the local scan store. It is a visual aid, not native
+/// scan data.
 /// </summary>
 public static class PointCloudReferenceBuilder
 {
@@ -22,14 +23,10 @@ public static class PointCloudReferenceBuilder
         return FindExisting(document) is not null;
     }
 
-    /// <summary>
-    /// Hides the reference without touching the scan store. Returns false when no
-    /// reference element existed.
-    /// </summary>
     public static bool Hide(UIApplication app)
     {
         var document = RequireDocument(app);
-        using var transaction = new Transaction(document, "Revo AI BIM - Hide point-cloud reference");
+        using var transaction = new Transaction(document, "Revo AI BIM - Hide point cloud");
         transaction.Start();
 
         try
@@ -41,7 +38,11 @@ public static class PointCloudReferenceBuilder
                 return false;
             }
 
-            document.Delete(existing.Id);
+            foreach (var id in AllReferenceIds(document))
+            {
+                document.Delete(id);
+            }
+
             transaction.Commit();
             return false;
         }
@@ -56,21 +57,17 @@ public static class PointCloudReferenceBuilder
         }
     }
 
-    /// <summary>
-    /// Replaces any existing reference with a fresh sampled marker set.
-    /// </summary>
     public static bool Show(UIApplication app, IReadOnlyList<double[]> positions)
     {
         var document = RequireDocument(app);
-        using var transaction = new Transaction(document, "Revo AI BIM - Show point-cloud reference");
+        using var transaction = new Transaction(document, "Revo AI BIM - Show point cloud");
         transaction.Start();
 
         try
         {
-            var existing = FindExisting(document);
-            if (existing is not null)
+            foreach (var id in AllReferenceIds(document))
             {
-                document.Delete(existing.Id);
+                document.Delete(id);
             }
 
             CreateShape(document, positions);
@@ -100,14 +97,21 @@ public static class PointCloudReferenceBuilder
         return document;
     }
 
-    private static DirectShape? FindExisting(Document document)
-    {
-        return new FilteredElementCollector(document)
+    private static DirectShape? FindExisting(Document document) =>
+        new FilteredElementCollector(document)
             .OfClass(typeof(DirectShape))
             .Cast<DirectShape>()
             .FirstOrDefault(element =>
                 string.Equals(element.Name, ElementName, StringComparison.Ordinal));
-    }
+
+    private static IEnumerable<ElementId> AllReferenceIds(Document document) =>
+        new FilteredElementCollector(document)
+            .OfClass(typeof(DirectShape))
+            .Cast<DirectShape>()
+            .Where(element =>
+                string.Equals(element.Name, ElementName, StringComparison.Ordinal))
+            .Select(element => element.Id)
+            .ToList();
 
     private static void CreateShape(Document document, IReadOnlyList<double[]> positions)
     {
@@ -150,56 +154,131 @@ public static class PointCloudReferenceBuilder
 
         var extent = new XYZ(max.X - min.X, max.Y - min.Y, max.Z - min.Z);
         var largest = Math.Max(extent.X, Math.Max(extent.Y, extent.Z));
-        var radiusMeters = Math.Clamp(largest / 1_200.0, 0.012, 0.06);
-        var radius = UnitUtils.ConvertToInternalUnits(radiusMeters, UnitTypeId.Meters);
+        var markerMeters = Math.Clamp(largest / 600.0, 0.02, 0.12);
+        var marker = UnitUtils.ConvertToInternalUnits(markerMeters, UnitTypeId.Meters);
 
+        try
+        {
+            var geometry = BuildMesh(converted, marker);
+            CreateDirectShape(document, geometry, marker, useLines: false);
+            RevoLog.Info(
+                $"Point-cloud reference created from {converted.Count:N0} sampled points (mesh).");
+        }
+        catch (Exception ex) when (IsGeometryFailure(ex))
+        {
+            RevoLog.Warn(
+                "Mesh point-cloud reference failed; falling back to model lines. " +
+                ex.GetType().Name + ": " + ex.Message);
+            var geometry = BuildLines(converted, marker);
+            CreateDirectShape(document, geometry, marker, useLines: true);
+            RevoLog.Info(
+                $"Point-cloud reference created from {converted.Count:N0} sampled points (lines).");
+        }
+    }
+
+    private static IList<GeometryObject> BuildMesh(IReadOnlyList<XYZ> points, double marker)
+    {
         using var builder = new TessellatedShapeBuilder
         {
-            Target = TessellatedShapeBuilderTarget.Solid,
+            Target = TessellatedShapeBuilderTarget.Mesh,
             Fallback = TessellatedShapeBuilderFallback.Mesh,
         };
+        builder.OpenConnectedFaceSet(false);
 
-        foreach (var center in converted)
+        foreach (var center in points)
         {
-            builder.OpenConnectedFaceSet(true);
-            AddTetrahedron(builder, center, radius);
-            builder.CloseConnectedFaceSet();
+            var a = center + new XYZ(marker, 0, 0);
+            var b = center + new XYZ(-marker, 0, 0);
+            var c = center + new XYZ(0, marker, 0);
+            var d = center + new XYZ(0, 0, marker);
+
+            AddTriangle(builder, a, b, c);
+            AddTriangle(builder, a, c, d);
+            AddTriangle(builder, a, d, b);
+            AddTriangle(builder, b, d, c);
         }
 
+        builder.CloseConnectedFaceSet();
         builder.Build();
+
         using var result = builder.GetBuildResult();
-        if (!result.AreObjectsAvailable || result.Outcome == TessellatedShapeBuilderOutcome.Nothing)
+        if (!result.AreObjectsAvailable ||
+            result.Outcome == TessellatedShapeBuilderOutcome.Nothing)
         {
             throw new InvalidOperationException(
-                "Revit could not build the sampled point-cloud reference geometry.");
+                "Revit could not build the sampled point-cloud mesh.");
         }
 
+        return result.GetGeometricalObjects();
+    }
+
+    private static IList<GeometryObject> BuildLines(IReadOnlyList<XYZ> points, double marker)
+    {
+        var lines = new List<GeometryObject>(points.Count * 2);
+        var vertical = new XYZ(0, 0, marker * 1.5);
+        var horizontal = new XYZ(marker * 1.5, 0, 0);
+
+        foreach (var point in points)
+        {
+            lines.Add(Line.CreateBound(point, point + vertical));
+            lines.Add(Line.CreateBound(point, point + horizontal));
+        }
+
+        return lines;
+    }
+
+    private static void CreateDirectShape(
+        Document document,
+        IList<GeometryObject> geometry,
+        double marker,
+        bool useLines)
+    {
         var shape = DirectShape.CreateElement(
             document,
             new ElementId(BuiltInCategory.OST_GenericModel));
         shape.SetName(ElementName);
-        shape.SetShape(result.GetGeometricalObjects());
+        shape.SetShape(geometry);
         shape.get_Parameter(BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS)?.Set(Comment);
         shape.get_Parameter(BuiltInParameter.ALL_MODEL_MARK)?.Set("REVO-REFERENCE");
+
+        if (useLines)
+        {
+            ApplyReferenceOverrides(document, shape.Id, marker);
+        }
     }
 
-    private static void AddTetrahedron(
-        TessellatedShapeBuilder builder,
-        XYZ center,
-        double radius)
+    private static void ApplyReferenceOverrides(
+        Document document,
+        ElementId shapeId,
+        double marker)
     {
-        var a = center + new XYZ(radius, 0, 0);
-        var b = center + new XYZ(-radius, 0, 0);
-        var c = center + new XYZ(0, radius, 0);
-        var d = center + new XYZ(0, 0, radius);
+        try
+        {
+            var overrideSettings = new OverrideGraphicSettings();
+            overrideSettings.SetProjectionLineColor(new Color(0, 120, 215));
+            overrideSettings.SetProjectionLineWeight(2);
+            overrideSettings.SetSurfaceForegroundPatternColor(new Color(0, 120, 215));
 
-        AddFace(builder, a, b, c);
-        AddFace(builder, a, c, d);
-        AddFace(builder, a, d, b);
-        AddFace(builder, b, d, c);
+            foreach (var view in new FilteredElementCollector(document)
+                         .OfClass(typeof(View3D))
+                         .Cast<View3D>()
+                         .Where(view => !view.IsTemplate))
+            {
+                view.SetElementOverrides(shapeId, overrideSettings);
+            }
+        }
+        catch (Exception ex)
+        {
+            RevoLog.Warn("Could not apply point-cloud view overrides: " + ex.Message);
+        }
     }
 
-    private static void AddFace(
+    private static bool IsGeometryFailure(Exception ex) =>
+        ex is Autodesk.Revit.Exceptions.InternalException
+            or Autodesk.Revit.Exceptions.ApplicationException
+            or InvalidOperationException;
+
+    private static void AddTriangle(
         TessellatedShapeBuilder builder,
         XYZ first,
         XYZ second,
