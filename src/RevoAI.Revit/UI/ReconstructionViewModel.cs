@@ -130,6 +130,23 @@ public sealed class ReconstructionViewModel : ObservableObject
     public bool IsAstraSubscriptionProvider =>
         SelectedProvider == "Revo AI (DeepSeek Go)";
 
+    public string AiProviderLabel
+    {
+        get
+        {
+            var preferred = Environment.GetEnvironmentVariable("REVOAI_AI_PROVIDER");
+            if (string.Equals(preferred, "claude", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Claude";
+            }
+
+            var claudeKey =
+                Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY") ??
+                Environment.GetEnvironmentVariable("REVOAI_ANTHROPIC_API_KEY");
+            return string.IsNullOrWhiteSpace(claudeKey) ? "DeepSeek Go" : "Claude";
+        }
+    }
+
     public string ExternalPlanPath
     {
         get => _externalPlanPath;

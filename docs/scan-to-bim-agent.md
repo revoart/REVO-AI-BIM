@@ -109,7 +109,7 @@ so; do not silently skip.
 | Measurement report with units/datum/axes/assumptions/VERIFY | Implemented in the plan JSON |
 | Build blocking for assumed units/incoherent floors | Implemented |
 | Orthographic depth snapshots | Implemented (plan + four elevations) |
-| DeepSeek Go schedule provider | Implemented; live API not tested without a key |
+| DeepSeek Go / Claude schedule provider | Implemented; live API not tested without a key |
 | Cloud-to-model distance verification | Not implemented; no accuracy claim |
 | Point-cloud overlay | Known issue: tessellation build fails in Revit 2027; line fallback unverified |
 

@@ -3,6 +3,43 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.8.2] - 2026-11-02 - Claude provider for model generation only
+
+### Added
+
+- Anthropic Claude provider for the AI schedule:
+  - Endpoint `https://api.anthropic.com/v1`
+  - Key from `ANTHROPIC_API_KEY` or `REVOAI_ANTHROPIC_API_KEY`
+  - Model from `REVOAI_CLAUDE_MODEL` (default `claude-sonnet-5-5`)
+  - Sends the plan and elevation snapshots as Anthropic image blocks.
+  - Retries with measured metadata if the provider rejects images.
+- Provider selection:
+  - `REVOAI_AI_PROVIDER=claude` forces Claude.
+  - `REVOAI_AI_PROVIDER=deepseek` forces DeepSeek Go.
+  - `auto` prefers Claude when a Claude key is configured, otherwise DeepSeek.
+- The Build card label now shows Claude or DeepSeek Go according to the configured provider.
+
+### Key scope
+
+The Claude key is read only by `revoai_engine/reconstruction/claude.py` and used
+only by `reconstruction.plan` to generate the BIM schedule. It is not logged,
+stored in the knowledge DB, sent to any other feature, or used for chat or
+diagnostics.
+
+### Verified
+
+- 83 Python tests pass (Claude key-missing, JSON parsing and provider-selection tests added).
+- 37 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the portrait Workspace.
+
+### Known gaps
+
+- A live Claude call has not been tested because no key is configured here.
+- The exact Claude model ID must match the Anthropic account.
+- Pitched roofs are flat; stairs are not built; columns need a family.
+- Point-cloud overlay remains a known Revit 2027 issue.
+
 ## [0.8.1] - 2026-11-02 - Visible step-by-step AI build
 
 ### Added

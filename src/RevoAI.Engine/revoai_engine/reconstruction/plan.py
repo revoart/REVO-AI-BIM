@@ -22,6 +22,7 @@ from .. import __version__
 from ..analysis import load_segmentation
 from ..analysis.snapshots import generate_snapshots
 from ..pointcloud import PointCloudStore
+from . import claude
 from .deepseek import request_ai_schedule
 from .errors import plan_failed, plan_invalid
 from .schedule import normalize_schedule
@@ -327,15 +328,24 @@ def _create_ai_plan(params, started: float) -> dict[str, Any]:
             "citations": knowledge["citations"],
         }
 
-    schedule = request_ai_schedule(
-        context,
-        snapshots,
-        model=params.astra_model,
+    preferred = os.environ.get("REVOAI_AI_PROVIDER", "auto").strip().lower()
+    use_claude = preferred == "claude" or (
+        preferred in {"", "auto"} and claude.is_configured()
     )
+    if use_claude:
+        schedule = claude.request_claude_schedule(context, snapshots)
+        source_label = f"claude:{claude.selected_model()}"
+    else:
+        schedule = request_ai_schedule(
+            context,
+            snapshots,
+            model=params.astra_model,
+        )
+        source_label = f"deepseek:{params.astra_model}"
     normalized = normalize_schedule(
         schedule,
         store_metadata=store.metadata,
-        source_label=f"deepseek:{params.astra_model}",
+        source_label=source_label,
     )
     normalized["report"]["snapshots"] = {
         "folder": snapshots.get("folder"),
@@ -357,8 +367,8 @@ def _create_ai_plan(params, started: float) -> dict[str, Any]:
         "storePath": str(store.path),
         "method": normalized["method"],
         "parameters": {
-            "provider": "ai",
-            "model": params.astra_model,
+            "provider": "claude" if use_claude else "deepseek",
+            "model": claude.selected_model() if use_claude else params.astra_model,
             "snapshotFolder": snapshots.get("folder"),
             "astraElementCount": element_count,
             "confidenceThreshold": float(params.confidence_threshold),

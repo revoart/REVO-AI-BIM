@@ -7,11 +7,12 @@ elements. The product is built in ten gated phases; each phase is implemented,
 tested and reviewed before the next begins.
 
 > **Current status: AI schedule prototype with a visible step-by-step Revit
-> build. The portrait tool has three steps: Scan, Analyse and Build. DeepSeek Go
-> generates a measured schedule from plan/elevation snapshots, then Revit commits
-> levels, slabs, walls, hosted doors/windows, roofs and columns stage by stage so
-> the user can watch the model appear. The Knowledge Library is permanently
-> removed from the customer UI.**
+> build. The portrait tool has three steps: Scan, Analyse and Build. Claude
+> (preferred when a key is configured) or DeepSeek Go generates a measured
+> schedule from plan/elevation snapshots, then Revit commits levels, slabs,
+> walls, hosted doors/windows, roofs and columns stage by stage so the user can
+> watch the model appear. The Knowledge Library is permanently removed from the
+> customer UI.**
 >
 > This is not a trained neural network. Revit shows a sampled **point-cloud
 > reference** made of model markers, not a native RCP/RCS scan; it is a visual
@@ -46,7 +47,7 @@ tested and reviewed before the next begins.
 | Native build safety gate (units, floors, coherence) | Implemented; blocks unreliable plans |
 | Native slabs, walls, hosted doors/windows and flat roofs | Implemented; Revit 2027 builder probe passed |
 | Visible stage-by-stage AI build with progress | Implemented; commits levels, slabs, walls, openings, roofs and columns separately |
-| DeepSeek Go AI schedule from plan/elevation snapshots | Implemented; live API not tested without a key |
+| Claude or DeepSeek Go AI schedule from plan/elevation snapshots | Implemented; live API not tested without a key |
 | Local knowledge library (SQLite + FTS5, provenance, review, backup/export) | Backend only; permanently removed from the customer UI |
 | Unit conversion kernel (metres ↔ feet ↔ mm/in/US survey feet) | Done, tested |
 | Structured logging, configuration, error model | Done |
@@ -133,11 +134,12 @@ previews native floors and walls and creates them in one Revit transaction after
 confirmation. Created elements are marked `REVO-INFERRED`; no geometry is created
 until the user clicks **Create in Revit**.
 
-The Build stage uses **DeepSeek Go** through an OpenAI-compatible endpoint. Set
-`DEEPSEEK_API_KEY` (or `REVOAI_AI_API_KEY`) before starting Revit. The engine
+The Build stage prefers **Claude** when `ANTHROPIC_API_KEY` is configured, and
+otherwise uses **DeepSeek Go**. Set the key before starting Revit. The engine
 generates plan and elevation depth snapshots, sends them with measured metadata,
 validates the returned schedule and only then builds native slabs, walls, hosted
-doors/windows and roofs. External plan JSON remains available for testing. See
+doors/windows and roofs. The Claude key is used only for schedule generation and
+is never logged. Force a provider with `REVOAI_AI_PROVIDER=claude|deepseek`. See
 [docs/scan-to-bim-agent.md](docs/scan-to-bim-agent.md),
 [docs/external-bim-plan.md](docs/external-bim-plan.md) and
 [docs/subscription-architecture.md](docs/subscription-architecture.md).

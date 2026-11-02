@@ -119,7 +119,7 @@
                 <Border Style="{StaticResource Card}" Margin="0,0,0,10">
                     <StackPanel>
                         <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="DeepSeek Go" Foreground="{StaticResource BlueBrush}"
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Generate.AiProviderLabel}" Foreground="{StaticResource BlueBrush}"
                                        FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center" />
                             <TextBlock Text="3  Build" Style="{StaticResource SmallTitle}" />
                         </DockPanel>
