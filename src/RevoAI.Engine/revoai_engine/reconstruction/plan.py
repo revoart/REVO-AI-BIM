@@ -23,6 +23,7 @@ from ..analysis import load_segmentation
 from ..analysis.snapshots import generate_snapshots
 from ..pointcloud import PointCloudStore
 from . import claude
+from . import openai as openai_provider
 from .deepseek import request_ai_schedule
 from .errors import plan_failed, plan_invalid
 from .schedule import normalize_schedule
@@ -332,9 +333,17 @@ def _create_ai_plan(params, started: float) -> dict[str, Any]:
     use_claude = preferred == "claude" or (
         preferred in {"", "auto"} and claude.is_configured()
     )
+    use_openai = preferred == "openai" or (
+        preferred in {"", "auto"}
+        and not use_claude
+        and openai_provider.is_configured()
+    )
     if use_claude:
         schedule = claude.request_claude_schedule(context, snapshots)
         source_label = f"claude:{claude.selected_model()}"
+    elif use_openai:
+        schedule = openai_provider.request_openai_schedule(context, snapshots)
+        source_label = f"openai:{openai_provider.selected_model()}"
     else:
         schedule = request_ai_schedule(
             context,
@@ -367,8 +376,14 @@ def _create_ai_plan(params, started: float) -> dict[str, Any]:
         "storePath": str(store.path),
         "method": normalized["method"],
         "parameters": {
-            "provider": "claude" if use_claude else "deepseek",
-            "model": claude.selected_model() if use_claude else params.astra_model,
+            "provider": "claude" if use_claude else "openai" if use_openai else "deepseek",
+            "model": (
+                claude.selected_model()
+                if use_claude
+                else openai_provider.selected_model()
+                if use_openai
+                else params.astra_model
+            ),
             "snapshotFolder": snapshots.get("folder"),
             "astraElementCount": element_count,
             "confidenceThreshold": float(params.confidence_threshold),

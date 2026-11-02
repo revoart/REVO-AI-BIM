@@ -136,11 +136,11 @@ This file is deliberately blunt. Anything listed here is **not working** or
     Automated tests cover storage, RPC and contract behavior, not the WPF/Revit
     interaction.
 
-33. **Claude and DeepSeek Go are not live-tested.** The providers, image payloads,
-    text-only fallbacks and schedule validation are tested with fakes. A real run
-    requires `ANTHROPIC_API_KEY` (Claude) or `DEEPSEEK_API_KEY` (DeepSeek Go),
-    network access and the correct model ID. The Claude key is read only by the
-    Claude provider and only for schedule generation; it is not logged or stored.
+33. **Claude, OpenAI and DeepSeek Go are not live-tested.** The providers, image
+    payloads, text-only fallbacks and schedule validation are tested with fakes. A
+    real run requires `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` or `DEEPSEEK_API_KEY`,
+    network access and the correct model ID. Provider keys are read only by their
+    provider and only for schedule generation; they are not logged or stored.
 34. **Pitched roofs are created flat.** The builder uses a footprint roof and
     warns when the schedule pitch is greater than 1°. Gable/hip slope assignment
     is not implemented.

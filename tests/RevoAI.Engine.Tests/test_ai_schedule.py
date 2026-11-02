@@ -18,7 +18,9 @@ from revoai_engine.protocol import (
 from revoai_engine.reconstruction import create_plan
 from revoai_engine.reconstruction.deepseek import request_ai_schedule
 from revoai_engine.reconstruction import claude
+from revoai_engine.reconstruction import openai as openai_provider
 from revoai_engine.reconstruction.claude import request_claude_schedule
+from revoai_engine.reconstruction.openai import request_openai_schedule
 from revoai_engine.reconstruction.errors import PlanError
 from revoai_engine.reconstruction.schedule import normalize_schedule
 
@@ -280,6 +282,104 @@ def test_ai_plan_prefers_claude_when_key_is_configured(
     assert plan["parameters"]["provider"] == "claude"
     assert plan["parameters"]["model"] == "claude-sonnet-5-5"
     assert plan["report"]["source"] == "claude:claude-sonnet-5-5"
+
+
+def test_openai_provider_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in ("OPENAI_API_KEY", "REVOAI_OPENAI_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+
+    with pytest.raises(PlanError) as error:
+        request_openai_schedule({"scanId": "test"}, {"views": []})
+    assert error.value.code == ErrorCode.AI_PROVIDER_FAILED
+
+
+def test_openai_provider_parses_schedule_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    payload = {
+        "units": "m",
+        "levels": [{"id": "L1", "name": "Level 1", "elevationMeters": 0}],
+        "walls": [],
+        "floors": [],
+    }
+    monkeypatch.setattr(
+        "revoai_engine.reconstruction.openai._post",
+        lambda base, key, body, timeout: json.dumps(
+            {"choices": [{"message": {"content": json.dumps(payload)}}]}
+        ),
+    )
+
+    result = request_openai_schedule(
+        {"scanId": "test"},
+        {"views": []},
+        api_key_override="test-key",
+        model="gpt-test",
+    )
+
+    assert result["levels"][0]["id"] == "L1"
+    assert result["_provider"] == "openai"
+    assert result["_model"] == "gpt-test"
+
+
+def test_ai_plan_uses_openai_when_configured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    imported = _import_room(tmp_path)
+    run_segmentation(
+        SegmentationRunParams(
+            store_path=imported["storePath"],
+            voxel_size_meters=0.0,
+            max_points=20_000,
+            plane_distance_meters=0.01,
+            min_plane_points=100,
+            max_planes=20,
+        )
+    )
+    payload = {
+        "units": "m",
+        "levels": [{"id": "L1", "name": "Level 1", "elevationMeters": 0.0}],
+        "walls": [
+            {
+                "id": "W1",
+                "levelId": "L1",
+                "start": [0, 0, 0],
+                "end": [4, 0, 0],
+                "thicknessMeters": 0.2,
+                "heightMeters": 2.7,
+                "source": "MEASURED",
+            }
+        ],
+        "floors": [
+            {
+                "id": "F1",
+                "levelId": "L1",
+                "boundary": [[0, 0, 0], [4, 0, 0], [4, 3, 0], [0, 3, 0]],
+                "thicknessMeters": 0.2,
+                "source": "MEASURED",
+            }
+        ],
+    }
+    monkeypatch.setattr(
+        "revoai_engine.reconstruction.plan.claude.is_configured", lambda: False
+    )
+    monkeypatch.setattr(
+        "revoai_engine.reconstruction.plan.openai_provider.is_configured",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "revoai_engine.reconstruction.plan.openai_provider.request_openai_schedule",
+        lambda context, snapshots: payload,
+    )
+    monkeypatch.setattr(
+        "revoai_engine.reconstruction.plan.openai_provider.selected_model",
+        lambda model=None: "gpt-6-astra",
+    )
+
+    plan = create_plan(
+        ReconstructionPlanParams(store_path=imported["storePath"], provider="ai")
+    )
+
+    assert plan["parameters"]["provider"] == "openai"
+    assert plan["parameters"]["model"] == "gpt-6-astra"
+    assert plan["report"]["source"] == "openai:gpt-6-astra"
 
 
 def test_ai_plan_branch_uses_validated_schedule(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

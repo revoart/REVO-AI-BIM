@@ -3,6 +3,40 @@
 All notable changes are documented here. Format follows Keep a Changelog and
 Semantic Versioning.
 
+## [0.8.3] - 2026-11-02 - OpenAI provider for model generation
+
+### Added
+
+- OpenAI provider for the AI schedule:
+  - Endpoint `https://api.openai.com/v1`
+  - Key from `OPENAI_API_KEY` or `REVOAI_OPENAI_API_KEY`
+  - Model from `REVOAI_OPENAI_MODEL` (default `gpt-6-astra`)
+  - Sends plan/elevation snapshots as `image_url` content
+  - Retries with measured metadata if images are rejected
+- Provider selection:
+  - `REVOAI_AI_PROVIDER=openai` forces OpenAI.
+  - Auto prefers Claude, then OpenAI, then DeepSeek Go.
+
+### Key scope
+
+The OpenAI key is read only by `revoai_engine/reconstruction/openai.py` and used
+only by `reconstruction.plan` to generate the BIM schedule. It is not logged,
+stored in the knowledge DB, or used for any other feature.
+
+### Verified
+
+- 86 Python tests pass.
+- 37 .NET tests pass.
+- Revit 2026 and 2027 Release builds complete with zero warnings.
+- WPF probe constructs the portrait Workspace.
+
+### Known gaps
+
+- A live OpenAI call has not been tested because no key is configured here.
+- The exact OpenAI model ID must match the account.
+- Pitched roofs are flat; stairs are not built; columns need a family.
+- Point-cloud overlay remains a known Revit 2027 issue.
+
 ## [0.8.2] - 2026-11-02 - Claude provider for model generation only
 
 ### Added

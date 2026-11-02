@@ -135,15 +135,31 @@ public sealed class ReconstructionViewModel : ObservableObject
         get
         {
             var preferred = Environment.GetEnvironmentVariable("REVOAI_AI_PROVIDER");
+            if (string.Equals(preferred, "openai", StringComparison.OrdinalIgnoreCase))
+            {
+                return "OpenAI";
+            }
             if (string.Equals(preferred, "claude", StringComparison.OrdinalIgnoreCase))
             {
                 return "Claude";
+            }
+            if (string.Equals(preferred, "deepseek", StringComparison.OrdinalIgnoreCase))
+            {
+                return "DeepSeek Go";
             }
 
             var claudeKey =
                 Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY") ??
                 Environment.GetEnvironmentVariable("REVOAI_ANTHROPIC_API_KEY");
-            return string.IsNullOrWhiteSpace(claudeKey) ? "DeepSeek Go" : "Claude";
+            if (!string.IsNullOrWhiteSpace(claudeKey))
+            {
+                return "Claude";
+            }
+
+            var openAiKey =
+                Environment.GetEnvironmentVariable("OPENAI_API_KEY") ??
+                Environment.GetEnvironmentVariable("REVOAI_OPENAI_API_KEY");
+            return string.IsNullOrWhiteSpace(openAiKey) ? "DeepSeek Go" : "OpenAI";
         }
     }
 

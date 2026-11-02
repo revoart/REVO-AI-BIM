@@ -47,7 +47,7 @@ tested and reviewed before the next begins.
 | Native build safety gate (units, floors, coherence) | Implemented; blocks unreliable plans |
 | Native slabs, walls, hosted doors/windows and flat roofs | Implemented; Revit 2027 builder probe passed |
 | Visible stage-by-stage AI build with progress | Implemented; commits levels, slabs, walls, openings, roofs and columns separately |
-| Claude or DeepSeek Go AI schedule from plan/elevation snapshots | Implemented; live API not tested without a key |
+| Claude, OpenAI or DeepSeek Go AI schedule from plan/elevation snapshots | Implemented; live API not tested without a key |
 | Local knowledge library (SQLite + FTS5, provenance, review, backup/export) | Backend only; permanently removed from the customer UI |
 | Unit conversion kernel (metres ↔ feet ↔ mm/in/US survey feet) | Done, tested |
 | Structured logging, configuration, error model | Done |
@@ -134,12 +134,13 @@ previews native floors and walls and creates them in one Revit transaction after
 confirmation. Created elements are marked `REVO-INFERRED`; no geometry is created
 until the user clicks **Create in Revit**.
 
-The Build stage prefers **Claude** when `ANTHROPIC_API_KEY` is configured, and
-otherwise uses **DeepSeek Go**. Set the key before starting Revit. The engine
-generates plan and elevation depth snapshots, sends them with measured metadata,
-validates the returned schedule and only then builds native slabs, walls, hosted
-doors/windows and roofs. The Claude key is used only for schedule generation and
-is never logged. Force a provider with `REVOAI_AI_PROVIDER=claude|deepseek`. See
+The Build stage prefers **Claude** when `ANTHROPIC_API_KEY` is configured, then
+**OpenAI** when `OPENAI_API_KEY` is configured, and otherwise uses **DeepSeek Go**.
+Set the key before starting Revit. The engine generates plan and elevation depth
+snapshots, sends them with measured metadata, validates the returned schedule and
+only then builds native slabs, walls, hosted doors/windows and roofs. Provider
+keys are used only for schedule generation and are never logged. Force a provider
+with `REVOAI_AI_PROVIDER=claude|openai|deepseek`. See
 [docs/scan-to-bim-agent.md](docs/scan-to-bim-agent.md),
 [docs/external-bim-plan.md](docs/external-bim-plan.md) and
 [docs/subscription-architecture.md](docs/subscription-architecture.md).
